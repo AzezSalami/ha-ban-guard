@@ -15,6 +15,7 @@ from .const import (
     ACT_BAN,
     ACT_BLOCKED,
     ACT_FAILED_LOGIN,
+    ACT_LOGIN,
     STORAGE_KEY_ACTIVITY,
     STORAGE_VERSION,
 )
@@ -178,6 +179,7 @@ class ActivityLog:
             "failed_logins_24h": self.count_since(ACT_FAILED_LOGIN, day_ago),
             "bans_24h": self.count_since(ACT_BAN, day_ago),
             "blocked_24h": self.count_since(ACT_BLOCKED, day_ago),
+            "logins_24h": self.count_since(ACT_LOGIN, day_ago),
             "failed_logins_7d": [{"date": d, "count": c} for d, c in per_day.items()],
             "top_ips": [{"ip": ip, "count": c} for ip, c in offenders.most_common(10)],
             "top_countries": [{"country": cc, "count": c} for cc, c in countries.most_common(10)],

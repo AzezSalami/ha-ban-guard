@@ -6,6 +6,7 @@ import { shared } from "../styles";
 import type { ActivityEntry, ActivityType } from "../types";
 
 const TYPES: ActivityType[] = [
+  "login",
   "failed_login",
   "allowlisted_failure",
   "ban",
@@ -20,6 +21,7 @@ const PAGE = 100;
 const MAX_LIVE = 1000;
 
 const TYPE_CLASS: Partial<Record<ActivityType, string>> = {
+  login: "good",
   failed_login: "warn",
   allowlisted_failure: "warn",
   ban: "bad",

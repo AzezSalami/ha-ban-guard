@@ -40,7 +40,6 @@
   "overview": {
     "active_bans": "Active bans",
     "bans_24h": "Bans (24 h)",
-    "failed_24h": "Failed logins (24 h)",
     "blocked_24h": "Blocked requests (24 h)",
     "allowlist": "Allowlisted entries",
     "chart_title": "Failed logins, last 7 days",
@@ -50,7 +49,9 @@
     "no_offenders": "No failed logins or blocked requests in the last 7 days.",
     "countries_need_geoip": "Turn on GeoIP in Settings to see countries.",
     "last_ban": "Last ban",
-    "attempts": "{count} events"
+    "attempts": "{count} events",
+    "logins_24h": "Successful logins (24 h)",
+    "failed_24h": "Failed logins (24 h)"
   },
   "bans": {
     "add": "Ban address",
@@ -137,13 +138,14 @@
     "all": "All events",
     "load_more": "Load older entries",
     "empty_title": "No activity yet",
-    "empty_body": "Failed logins, bans and blocked requests will appear here as they happen.",
+    "empty_body": "Sign-ins, failed logins, bans and blocked requests will appear here as they happen.",
     "col_time": "Time",
     "col_type": "Event",
     "col_ip": "Address",
     "col_path": "Path",
     "col_details": "Details",
     "types": {
+      "login": "Successful login",
       "failed_login": "Failed login",
       "allowlisted_failure": "Failed login (allowlisted)",
       "ban": "Banned",
@@ -180,7 +182,8 @@
     "privacy_none": "None. Ban Guard is not contacting any external service.",
     "geoip_loaded": "Loaded ({edition})",
     "geoip_loading": "Enabled, not loaded yet",
-    "geoip_error": "Error: {error}"
+    "geoip_error": "Error: {error}",
+    "logins": "Successful-login log"
   },
   "backup": {
     "export_title": "Export",

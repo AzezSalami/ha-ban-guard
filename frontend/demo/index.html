@@ -67,26 +67,26 @@
         { value: "192.168.1.0/24", comment: "Home LAN", created_by: "Alex", created_at: iso(-900 * H), resolved: [], resolved_at: null, hostname: false },
         { value: "vpn.example.net", comment: "WireGuard endpoint", created_by: "Alex", created_at: iso(-300 * H), resolved: ["203.0.113.40"], resolved_at: iso(-0.2 * H), hostname: true },
       ];
-      const types = ["failed_login", "failed_login", "blocked", "ban", "failed_login", "unban", "allow", "expired", "allowlisted_failure"];
-      const ips = ["185.220.101.34", "103.145.13.9", "45.155.205.17", "185.220.101.34", "91.240.118.5", "198.51.100.23", "192.168.1.0/24", "103.145.13.9", "203.0.113.40"];
-      const cc = ["DE", "VN", "NL", "DE", "RU", "US", null, "VN", null];
+      const types = ["login", "failed_login", "failed_login", "blocked", "ban", "failed_login", "unban", "allow", "expired", "allowlisted_failure"];
+      const ips = ["192.168.1.23", "185.220.101.34", "103.145.13.9", "45.155.205.17", "185.220.101.34", "91.240.118.5", "198.51.100.23", "192.168.1.0/24", "103.145.13.9", "203.0.113.40"];
+      const cc = [null, "DE", "VN", "NL", "DE", "RU", "US", null, "VN", null];
       const activity = types.map((type, i) => ({
         id: 100 - i, ts: iso(-i * 0.37 * H), type, ip: ips[i], country: cc[i],
-        path: type === "blocked" ? "/api/websocket" : type.includes("failed") ? "/auth/login_flow/<redacted>" : null,
-        user_agent: type.includes("failed") ? "Mozilla/5.0 (X11; Linux x86_64)" : null,
+        path: type === "blocked" ? "/api/websocket" : type.includes("failed") || type === "login" ? "/auth/login_flow/<redacted>" : null,
+        user_agent: type.includes("failed") || type === "login" ? "Mozilla/5.0 (X11; Linux x86_64)" : null,
         detail: type === "ban" ? "5 failed logins in 15 min" : type === "blocked" ? "ban" : null,
-        user: type === "allow" ? "Alex" : null,
+        user: type === "allow" || type === "login" ? "Alex" : null,
       }));
       const status = {
         hook: "active", protection_enabled: true, ha_login_threshold: -1,
         geoip: { enabled: true, loaded: true, edition: "country", error: null },
-        rdns: true, doh: false, npm: { enabled: false },
+        login_logging: true, rdns: true, doh: false, npm: { enabled: false },
         country_rules: { allow: [], deny: ["KP"] }, under_attack: false,
       };
       const overview = {
         active_bans: bans.length, allowlist: allowlist.length, recent_failures: 3,
         last_ban: { ip: "103.145.13.9", reason: "5 failed logins in 15 min", created_at: iso(-0.4 * H), country: "VN" },
-        status, failed_logins_24h: 37, bans_24h: 2, blocked_24h: 412,
+        status, failed_logins_24h: 37, bans_24h: 2, blocked_24h: 412, logins_24h: 4,
         failed_logins_7d: [12, 4, 9, 31, 18, 6, 37].map((count, i) => ({ date: new Date(now - (6 - i) * 24 * H).toISOString().slice(0, 10), count })),
         top_ips: [{ ip: "185.220.101.34", count: 214 }, { ip: "45.155.205.17", count: 120 }, { ip: "103.145.13.9", count: 45 }, { ip: "91.240.118.5", count: 12 }],
         top_countries: [{ country: "DE", count: 214 }, { country: "NL", count: 120 }, { country: "VN", count: 45 }, { country: "RU", count: 12 }],

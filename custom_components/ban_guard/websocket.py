@@ -21,6 +21,7 @@ from .const import (
     ACT_DISALLOW,
     ACT_EXPIRED,
     ACT_FAILED_LOGIN,
+    ACT_LOGIN,
     ACT_REFUSED,
     ACT_UNBAN,
     CONF_NPM_SECRET,
@@ -34,6 +35,7 @@ from .services import get_manager, requester_ip
 from .settings import SettingsError, parse_duration
 
 ACTIVITY_TYPES = [
+    ACT_LOGIN,
     ACT_FAILED_LOGIN,
     ACT_ALLOWLISTED_FAILURE,
     ACT_BAN,

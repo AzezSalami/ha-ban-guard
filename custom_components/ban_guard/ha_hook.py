@@ -10,9 +10,15 @@ Ban Guard needs two things from Home Assistant's HTTP ban machinery:
 2. To see failed logins. HA's `process_wrong_login` increments
    `app[KEY_FAILED_LOGIN_ATTEMPTS][ip]`. We replace that defaultdict with a
    subclass whose `__setitem__` reports increments to Ban Guard.
+3. To see successful logins (optional). The auth login flow calls
+   `process_success_login(request)`, imported by name into
+   `homeassistant.components.auth.login_flow`. We wrap that one reference:
+   HA's original always runs first, then Ban Guard is told about the login.
+   Websocket re-authentication (every open tab) keeps calling the original
+   directly and is not logged.
 
-Both wrappers catch every exception from Ban Guard and fall back to plain
-dict behaviour, so a bug here can never block a request or crash HA.
+Every wrapper catches every exception from Ban Guard and falls back to HA's
+own behaviour, so a bug here can never block a request, a login or crash HA.
 `check_compatibility` runs at startup; if anything we rely on is missing the
 feature is disabled and a repair issue is raised, leaving HA's own banning
 untouched.
@@ -23,7 +29,9 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
+import functools
 import inspect
+from ipaddress import ip_address
 import logging
 import re
 from typing import Any, Protocol
@@ -63,6 +71,9 @@ class Hooks(Protocol):
     def hook_ha_ban(self, addr: IPAddress) -> None:
         """Report that HA added a ban by itself."""
 
+    def hook_login_success(self, addr: IPAddress, user_name: str | None) -> None:
+        """Report a successful login through the auth login flow."""
+
     def hook_error(self, err: BaseException) -> None:
         """Report an unexpected exception inside a hook."""
 
@@ -78,6 +89,7 @@ class Targets:
     key_threshold: Any
     bans_path: str
     attr_banned_at: str
+    login_flow: Any = None  # module whose process_success_login we wrap, if usable
 
 
 class BanLookup(dict[Any, Any]):
@@ -151,12 +163,56 @@ def _safe_report(hooks: Hooks, err: BaseException) -> None:
         _LOGGER.exception("Ban Guard hook error handler failed")
 
 
-def _source_contains(func: Callable[..., Any], needle: str) -> bool:
+def _source_contains(func: Any, needle: str) -> bool:
     try:
         return needle in inspect.getsource(func)
     except (OSError, TypeError):
         # Source unavailable (e.g. frozen build); trust the attribute checks.
         return True
+
+
+def _caller_user_name(frame: Any) -> str | None:
+    """Best-effort: the login flow keeps the authenticated user in a local `user`."""
+    caller = frame.f_back if frame is not None else None
+    try:
+        candidate = caller.f_locals.get("user") if caller is not None else None
+        name = getattr(candidate, "name", None)
+        return name if isinstance(name, str) and name else None
+    finally:
+        del caller
+
+
+def make_success_wrapper(original: Callable[[Any], None], hooks: Hooks) -> Callable[[Any], None]:
+    """Wrap HA's process_success_login so Ban Guard also sees the login."""
+
+    @functools.wraps(original)
+    def process_success_login(request: Any) -> None:
+        original(request)
+        frame = inspect.currentframe()
+        try:
+            remote = getattr(request, "remote", None)
+            if remote:
+                hooks.hook_login_success(ip_address(remote), _caller_user_name(frame))
+        except Exception as err:  # noqa: BLE001 - must never break a login
+            _safe_report(hooks, err)
+        finally:
+            del frame
+
+    process_success_login.__ban_guard_original__ = original  # type: ignore[attr-defined]
+    return process_success_login
+
+
+def _login_flow_module() -> Any:
+    """The module that calls process_success_login after a credential login."""
+    try:
+        from homeassistant.components.auth import login_flow  # noqa: PLC0415
+    except ImportError:
+        return None
+    if not callable(getattr(login_flow, "process_success_login", None)):
+        return None
+    if not _source_contains(login_flow, "process_success_login(request)"):
+        return None
+    return login_flow
 
 
 _COUNTER_INCREMENT = re.compile(r"\[KEY_FAILED_LOGIN_ATTEMPTS\]\[\s*\w+\s*\]\s*\+=\s*1")
@@ -222,6 +278,7 @@ def check_compatibility(hass: HomeAssistant) -> Targets:
         key_threshold=ha_ban.KEY_LOGIN_THRESHOLD,
         bans_path=str(path),
         attr_banned_at=ha_ban.ATTR_BANNED_AT,
+        login_flow=_login_flow_module(),
     )
 
 
@@ -246,6 +303,23 @@ class Hook:
     def installed(self) -> bool:
         """True if our lookup is still in place."""
         return isinstance(self.targets.manager.ip_bans_lookup, BanLookup)
+
+    @property
+    def login_logging_available(self) -> bool:
+        """True if successful logins can be observed on this HA version."""
+        return self.targets.login_flow is not None
+
+    def set_login_logging(self, enabled: bool) -> None:
+        """Install or remove the process_success_login wrapper."""
+        module = self.targets.login_flow
+        if module is None:
+            return
+        current = module.process_success_login
+        original = getattr(current, "__ban_guard_original__", None)
+        if enabled and original is None:
+            module.process_success_login = make_success_wrapper(current, self._hooks)
+        elif not enabled and original is not None:
+            module.process_success_login = original
 
     def install(self) -> None:
         """Install (or re-install) the lookup and counter wrappers."""
@@ -282,6 +356,7 @@ class Hook:
         """Restore HA's plain objects."""
         try:
             self.delegate_threshold(False)
+            self.set_login_logging(False)
             manager = self.targets.manager
             if isinstance(manager.ip_bans_lookup, BanLookup):
                 manager.ip_bans_lookup = dict(manager.ip_bans_lookup.items())

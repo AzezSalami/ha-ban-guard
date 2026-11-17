@@ -25,6 +25,7 @@ export interface AllowEntry {
 }
 
 export type ActivityType =
+  | "login"
   | "failed_login"
   | "allowlisted_failure"
   | "ban"
@@ -50,6 +51,7 @@ export interface ActivityEntry {
 export interface Status {
   hook: string;
   protection_enabled: boolean;
+  login_logging: boolean;
   ha_login_threshold: number | null;
   geoip: { enabled: boolean; loaded: boolean; edition: string; error: string | null };
   rdns: boolean;
@@ -68,6 +70,7 @@ export interface Overview {
   failed_logins_24h: number;
   bans_24h: number;
   blocked_24h: number;
+  logins_24h: number;
   failed_logins_7d: { date: string; count: number }[];
   top_ips: { ip: string; count: number }[];
   top_countries: { country: string; count: number }[];

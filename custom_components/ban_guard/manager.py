@@ -32,6 +32,7 @@ from .const import (
     ACT_DISALLOW,
     ACT_EXPIRED,
     ACT_FAILED_LOGIN,
+    ACT_LOGIN,
     ACT_REFUSED,
     ACT_UNBAN,
     BLOCKED_LOG_INTERVAL_SECONDS,
@@ -42,6 +43,7 @@ from .const import (
     CONF_GEOIP_ENABLED,
     CONF_GEOIP_MAX_MB,
     CONF_LOG_BLOCKED,
+    CONF_LOG_LOGINS,
     CONF_LOG_MAX_ENTRIES,
     CONF_LOG_RETENTION_DAYS,
     CONF_NOTIFY_ALLOWLISTED,
@@ -290,6 +292,7 @@ class BanGuardManager:
         self.hook = Hook(targets, self)
         self.hook.install()
         self.hook.delegate_threshold(self.protection_enabled)
+        self.hook.set_login_logging(bool(self.options[CONF_LOG_LOGINS]))
         self.hook_status = "active"
 
     async def async_unload(self) -> None:
@@ -578,6 +581,14 @@ class BanGuardManager:
             self._async_auto_ban(addr, count, window, offense, duration),
             f"ban_guard auto ban {ip}",
         )
+
+    def hook_login_success(self, addr: IPAddress, user_name: str | None) -> None:
+        """A user signed in through the login flow."""
+        addr = normalize_address(addr)
+        path, agent = self._request_info()
+        # Like HA, a successful login clears the address's failure history.
+        self._failures.pop(addr, None)
+        self.activity.add(ACT_LOGIN, str(addr), path=path, user_agent=agent, user=user_name)
 
     def _prune_failures(self, now: datetime) -> None:
         cutoff = now - timedelta(days=1)
@@ -1038,6 +1049,11 @@ class BanGuardManager:
                 "edition": self.options[CONF_GEOIP_EDITION],
                 "error": self.geoip.last_error if self.geoip else None,
             },
+            "login_logging": bool(
+                self.hook is not None
+                and self.hook.login_logging_available
+                and self.options[CONF_LOG_LOGINS]
+            ),
             "rdns": bool(self.options[CONF_RDNS_ENABLED]),
             "doh": bool(self.options[CONF_DOH_ENABLED]),
             "npm": self.npm_status,

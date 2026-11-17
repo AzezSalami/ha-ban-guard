@@ -64,10 +64,12 @@
         "data": {
           "log_retention_days": "Keep entries for",
           "log_max_entries": "Maximum entries",
+          "log_successful_logins": "Log successful logins",
           "log_blocked_requests": "Log blocked requests",
           "allowlist_refresh_minutes": "Re-resolve allowlisted hostnames every"
         },
         "data_description": {
+          "log_successful_logins": "Record the address, browser and user of every sign-in through the login page. Reconnecting an already signed-in app or browser tab is not logged.",
           "log_blocked_requests": "At most one entry per address per minute.",
           "allowlist_refresh_minutes": "Hostname lookups use your system resolver, or DNS-over-HTTPS if enabled."
         }
@@ -145,13 +147,23 @@
   },
   "entity": {
     "sensor": {
-      "active_bans": { "name": "Active bans" },
-      "bans_24h": { "name": "Bans in the last 24 hours" },
-      "failed_logins_24h": { "name": "Failed logins in the last 24 hours" },
-      "last_banned_ip": { "name": "Last banned IP" }
+      "active_bans": {
+        "name": "Active bans"
+      },
+      "bans_24h": {
+        "name": "Bans in the last 24 hours"
+      },
+      "failed_logins_24h": {
+        "name": "Failed logins in the last 24 hours"
+      },
+      "last_banned_ip": {
+        "name": "Last banned IP"
+      }
     },
     "binary_sensor": {
-      "under_attack": { "name": "Under attack" }
+      "under_attack": {
+        "name": "Under attack"
+      }
     }
   },
   "issues": {
@@ -177,56 +189,115 @@
     }
   },
   "exceptions": {
-    "not_loaded": { "message": "Ban Guard is not loaded." },
-    "invalid_ip": { "message": "{ip} is not a valid IP address or CIDR range." },
-    "invalid_source": { "message": "Unknown ban source {source}." },
-    "invalid_duration": { "message": "{value} is not a valid duration. Use values like 30m, 1h, 7d or permanent." },
-    "invalid_allow": { "message": "{value} is not a valid IP address, CIDR range or hostname." },
-    "expiry_in_past": { "message": "The ban on {ip} would already have expired." },
-    "not_banned": { "message": "{ip} is not banned." },
-    "not_allowlisted": { "message": "{value} is not on the allowlist." },
-    "allowlisted": { "message": "{ip} is on the allowlist. Remove it from the allowlist first." },
-    "protected_loopback": { "message": "Refused: banning {ip} would cover the loopback range {protected}." },
-    "protected_unspecified": { "message": "Refused: banning {ip} would cover {protected}." },
-    "protected_host": { "message": "Refused: banning {ip} would cover this Home Assistant host's own address {protected}." },
-    "protected_supervisor": { "message": "Refused: banning {ip} would cover the Supervisor network {protected}." },
-    "protected_proxy": { "message": "Refused: banning {ip} would cover the trusted proxy {protected}." },
-    "protected_admin": { "message": "Refused: banning {ip} would cover {protected}, which an administrator used in the last day." },
-    "protected_current": { "message": "Refused: banning {ip} would cover your current address {protected}." },
-    "import_invalid_format": { "message": "This is not a Ban Guard backup." },
-    "import_unsupported_version": { "message": "This backup was made by a newer version of Ban Guard." },
-    "import_too_large": { "message": "The backup has more than {limit} items." }
+    "not_loaded": {
+      "message": "Ban Guard is not loaded."
+    },
+    "invalid_ip": {
+      "message": "{ip} is not a valid IP address or CIDR range."
+    },
+    "invalid_source": {
+      "message": "Unknown ban source {source}."
+    },
+    "invalid_duration": {
+      "message": "{value} is not a valid duration. Use values like 30m, 1h, 7d or permanent."
+    },
+    "invalid_allow": {
+      "message": "{value} is not a valid IP address, CIDR range or hostname."
+    },
+    "expiry_in_past": {
+      "message": "The ban on {ip} would already have expired."
+    },
+    "not_banned": {
+      "message": "{ip} is not banned."
+    },
+    "not_allowlisted": {
+      "message": "{value} is not on the allowlist."
+    },
+    "allowlisted": {
+      "message": "{ip} is on the allowlist. Remove it from the allowlist first."
+    },
+    "protected_loopback": {
+      "message": "Refused: banning {ip} would cover the loopback range {protected}."
+    },
+    "protected_unspecified": {
+      "message": "Refused: banning {ip} would cover {protected}."
+    },
+    "protected_host": {
+      "message": "Refused: banning {ip} would cover this Home Assistant host's own address {protected}."
+    },
+    "protected_supervisor": {
+      "message": "Refused: banning {ip} would cover the Supervisor network {protected}."
+    },
+    "protected_proxy": {
+      "message": "Refused: banning {ip} would cover the trusted proxy {protected}."
+    },
+    "protected_admin": {
+      "message": "Refused: banning {ip} would cover {protected}, which an administrator used in the last day."
+    },
+    "protected_current": {
+      "message": "Refused: banning {ip} would cover your current address {protected}."
+    },
+    "import_invalid_format": {
+      "message": "This is not a Ban Guard backup."
+    },
+    "import_unsupported_version": {
+      "message": "This backup was made by a newer version of Ban Guard."
+    },
+    "import_too_large": {
+      "message": "The backup has more than {limit} items."
+    }
   },
   "services": {
     "ban": {
       "name": "Ban",
       "description": "Bans an IP address or CIDR range.",
       "fields": {
-        "ip": { "name": "IP address or range", "description": "Single address or CIDR, IPv4 or IPv6." },
-        "reason": { "name": "Reason", "description": "Shown in the ban list." },
-        "duration": { "name": "Duration", "description": "For example 30m, 24h, 7d, or permanent." }
+        "ip": {
+          "name": "IP address or range",
+          "description": "Single address or CIDR, IPv4 or IPv6."
+        },
+        "reason": {
+          "name": "Reason",
+          "description": "Shown in the ban list."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "For example 30m, 24h, 7d, or permanent."
+        }
       }
     },
     "unban": {
       "name": "Unban",
       "description": "Lifts one or more bans.",
       "fields": {
-        "ip": { "name": "IP addresses or ranges", "description": "Exactly as they appear in the ban list." }
+        "ip": {
+          "name": "IP addresses or ranges",
+          "description": "Exactly as they appear in the ban list."
+        }
       }
     },
     "allow": {
       "name": "Allowlist",
       "description": "Adds an IP address, CIDR range or hostname to the allowlist. Allowlisted addresses are never banned.",
       "fields": {
-        "value": { "name": "Address, range or hostname", "description": "Hostnames are re-resolved periodically." },
-        "comment": { "name": "Comment", "description": "Why this entry exists." }
+        "value": {
+          "name": "Address, range or hostname",
+          "description": "Hostnames are re-resolved periodically."
+        },
+        "comment": {
+          "name": "Comment",
+          "description": "Why this entry exists."
+        }
       }
     },
     "disallow": {
       "name": "Remove from allowlist",
       "description": "Removes an entry from the allowlist.",
       "fields": {
-        "value": { "name": "Address, range or hostname", "description": "Exactly as it appears in the allowlist." }
+        "value": {
+          "name": "Address, range or hostname",
+          "description": "Exactly as it appears in the allowlist."
+        }
       }
     },
     "purge_expired": {
@@ -237,9 +308,18 @@
       "name": "Import backup",
       "description": "Imports bans, allowlist and optionally settings from a Ban Guard JSON backup. Runs as a dry run by default and returns a preview.",
       "fields": {
-        "data": { "name": "Backup", "description": "The JSON object produced by the export action." },
-        "dry_run": { "name": "Dry run", "description": "Only validate and return what would change." },
-        "include_settings": { "name": "Include settings", "description": "Also apply settings from the backup." }
+        "data": {
+          "name": "Backup",
+          "description": "The JSON object produced by the export action."
+        },
+        "dry_run": {
+          "name": "Dry run",
+          "description": "Only validate and return what would change."
+        },
+        "include_settings": {
+          "name": "Include settings",
+          "description": "Also apply settings from the backup."
+        }
       }
     },
     "export": {

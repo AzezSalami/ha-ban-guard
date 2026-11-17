@@ -28,6 +28,7 @@ from .const import (
     CONF_GEOIP_ENABLED,
     CONF_GEOIP_MAX_MB,
     CONF_LOG_BLOCKED,
+    CONF_LOG_LOGINS,
     CONF_LOG_MAX_ENTRIES,
     CONF_LOG_RETENTION_DAYS,
     CONF_NETWORK_OVERRIDES,
@@ -215,6 +216,7 @@ class BanGuardOptionsFlow(OptionsFlow):
                 vol.Required(CONF_LOG_MAX_ENTRIES, default=opts[CONF_LOG_MAX_ENTRIES]): _number(
                     100, 100000
                 ),
+                vol.Required(CONF_LOG_LOGINS, default=opts[CONF_LOG_LOGINS]): _BOOL,
                 vol.Required(CONF_LOG_BLOCKED, default=opts[CONF_LOG_BLOCKED]): _BOOL,
                 vol.Required(
                     CONF_ALLOWLIST_REFRESH_MINUTES, default=opts[CONF_ALLOWLIST_REFRESH_MINUTES]

@@ -1249,7 +1249,6 @@ var Ke = {
 	overview: {
 		active_bans: "Active bans",
 		bans_24h: "Bans (24 h)",
-		failed_24h: "Failed logins (24 h)",
 		blocked_24h: "Blocked requests (24 h)",
 		allowlist: "Allowlisted entries",
 		chart_title: "Failed logins, last 7 days",
@@ -1259,7 +1258,9 @@ var Ke = {
 		no_offenders: "No failed logins or blocked requests in the last 7 days.",
 		countries_need_geoip: "Turn on GeoIP in Settings to see countries.",
 		last_ban: "Last ban",
-		attempts: "{count} events"
+		attempts: "{count} events",
+		logins_24h: "Successful logins (24 h)",
+		failed_24h: "Failed logins (24 h)"
 	},
 	bans: {
 		add: "Ban address",
@@ -1346,13 +1347,14 @@ var Ke = {
 		all: "All events",
 		load_more: "Load older entries",
 		empty_title: "No activity yet",
-		empty_body: "Failed logins, bans and blocked requests will appear here as they happen.",
+		empty_body: "Sign-ins, failed logins, bans and blocked requests will appear here as they happen.",
 		col_time: "Time",
 		col_type: "Event",
 		col_ip: "Address",
 		col_path: "Path",
 		col_details: "Details",
 		types: {
+			login: "Successful login",
 			failed_login: "Failed login",
 			allowlisted_failure: "Failed login (allowlisted)",
 			ban: "Banned",
@@ -1389,7 +1391,8 @@ var Ke = {
 		privacy_none: "None. Ban Guard is not contacting any external service.",
 		geoip_loaded: "Loaded ({edition})",
 		geoip_loading: "Enabled, not loaded yet",
-		geoip_error: "Error: {error}"
+		geoip_error: "Error: {error}",
+		logins: "Successful-login log"
 	},
 	backup: {
 		export_title: "Export",
@@ -1458,6 +1461,7 @@ function Xe(e) {
 }
 // src/views/activity.ts
 var Ze = [
+	"login",
 	"failed_login",
 	"allowlisted_failure",
 	"ban",
@@ -1468,6 +1472,7 @@ var Ze = [
 	"disallow",
 	"refused"
 ], W = 100, Qe = 1e3, $e = {
+	login: "good",
 	failed_login: "warn",
 	allowlisted_failure: "warn",
 	ban: "bad",
@@ -2460,6 +2465,7 @@ var X = class extends M {
       <div class="stats">
         ${this.card(e("overview.active_bans"), n.active_bans, "mdi:shield-lock", "bans")}
         ${this.card(e("overview.bans_24h"), n.bans_24h, "mdi:shield-alert", "activity")}
+        ${this.card(e("overview.logins_24h"), n.logins_24h, "mdi:login", "activity")}
         ${this.card(e("overview.failed_24h"), n.failed_logins_24h, "mdi:account-alert", "activity")}
         ${this.card(e("overview.blocked_24h"), n.blocked_24h, "mdi:cancel", "activity")}
         ${this.card(e("overview.allowlist"), n.allowlist, "mdi:playlist-check", "allowlist")}
@@ -2620,6 +2626,7 @@ var Z = class extends M {
 			window: String(n.window_minutes),
 			ladder: String(n.escalation)
 		}) : e("settings.off"))}
+        ${this.item(e("settings.logins"), r(t.status.login_logging))}
         ${this.item(e("settings.notifications"), r(n.notify_persistent))}
         ${this.item(e("settings.logging"), e("settings.logging_value", {
 			days: String(n.log_retention_days),

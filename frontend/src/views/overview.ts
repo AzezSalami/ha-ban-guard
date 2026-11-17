@@ -83,6 +83,7 @@ export class BgOverview extends LitElement {
       <div class="stats">
         ${this.card(t("overview.active_bans"), d.active_bans, "mdi:shield-lock", "bans")}
         ${this.card(t("overview.bans_24h"), d.bans_24h, "mdi:shield-alert", "activity")}
+        ${this.card(t("overview.logins_24h"), d.logins_24h, "mdi:login", "activity")}
         ${this.card(t("overview.failed_24h"), d.failed_logins_24h, "mdi:account-alert", "activity")}
         ${this.card(t("overview.blocked_24h"), d.blocked_24h, "mdi:cancel", "activity")}
         ${this.card(t("overview.allowlist"), d.allowlist, "mdi:playlist-check", "allowlist")}

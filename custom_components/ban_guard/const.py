@@ -38,6 +38,7 @@ SOURCES: Final = (
 
 # Activity types
 ACT_FAILED_LOGIN: Final = "failed_login"
+ACT_LOGIN: Final = "login"
 ACT_ALLOWLISTED_FAILURE: Final = "allowlisted_failure"
 ACT_BAN: Final = "ban"
 ACT_UNBAN: Final = "unban"
@@ -67,6 +68,7 @@ CONF_REPEATED_FAILURES: Final = "repeated_failures_threshold"
 CONF_LOG_RETENTION_DAYS: Final = "log_retention_days"
 CONF_LOG_MAX_ENTRIES: Final = "log_max_entries"
 CONF_LOG_BLOCKED: Final = "log_blocked_requests"
+CONF_LOG_LOGINS: Final = "log_successful_logins"
 CONF_ALLOWLIST_REFRESH_MINUTES: Final = "allowlist_refresh_minutes"
 CONF_GEOIP_ENABLED: Final = "geoip_enabled"
 CONF_GEOIP_EDITION: Final = "geoip_edition"
@@ -101,6 +103,7 @@ DEFAULT_OPTIONS: Final[dict[str, object]] = {
     CONF_LOG_RETENTION_DAYS: 30,
     CONF_LOG_MAX_ENTRIES: 5000,
     CONF_LOG_BLOCKED: True,
+    CONF_LOG_LOGINS: True,
     CONF_ALLOWLIST_REFRESH_MINUTES: 30,
     CONF_GEOIP_ENABLED: False,
     CONF_GEOIP_EDITION: GEOIP_EDITION_COUNTRY,
