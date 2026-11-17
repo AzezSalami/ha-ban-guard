@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/AzezSalami/ha-ban-guard/compare/v1.0.0...v1.0.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* detect failed-login counting in Home Assistant 2026.11 ([f3a211b](https://github.com/AzezSalami/ha-ban-guard/commit/f3a211b9b0c0dda9bc0b195bda687959072aa45d))
+
 ## 1.0.0 (2026-11-17)
 
 
