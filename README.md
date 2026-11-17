@@ -120,7 +120,6 @@ cd frontend && npm ci && npm run check && npm run build
 
 - **Branch protection on `main`** requiring the CI checks. Auto-merge only waits for checks that are required.
 - **Allow auto-merge** enabled (Settings → General).
-- **Repository description and topics** (for example `home-assistant`, `hacs`, `integration`) so the HACS validation action passes.
 - Optional secret `RELEASE_PLEASE_TOKEN` (a GitHub App or fine-grained token with contents and pull-request write access). PRs opened with the default `GITHUB_TOKEN` don't trigger CI. Without it, run CI on the release PR manually. Likewise, `BOT_TOKEN` is used for the weekly compatibility PRs.
 
 ## Security
