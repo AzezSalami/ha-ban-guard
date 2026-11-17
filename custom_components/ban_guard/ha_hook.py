@@ -25,6 +25,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 import inspect
 import logging
+import re
 from typing import Any, Protocol
 import warnings
 
@@ -158,6 +159,17 @@ def _source_contains(func: Callable[..., Any], needle: str) -> bool:
         return True
 
 
+_COUNTER_INCREMENT = re.compile(r"\[KEY_FAILED_LOGIN_ATTEMPTS\]\[\s*\w+\s*\]\s*\+=\s*1")
+
+
+def _source_matches(obj: Any, pattern: re.Pattern[str]) -> bool:
+    try:
+        return pattern.search(inspect.getsource(obj)) is not None
+    except (OSError, TypeError):
+        # Source unavailable (e.g. frozen build); trust the attribute checks.
+        return True
+
+
 def check_compatibility(hass: HomeAssistant) -> Targets:
     """Verify HA internals. Does blocking I/O (source reads): run in executor."""
     try:
@@ -182,8 +194,11 @@ def check_compatibility(hass: HomeAssistant) -> Targets:
 
     if not _source_contains(ha_ban.ban_middleware, "in ip_bans_lookup"):
         raise HookIncompatibleError("ban_middleware no longer checks ip_bans_lookup")
-    if not _source_contains(ha_ban.process_wrong_login, "KEY_FAILED_LOGIN_ATTEMPTS"):
-        raise HookIncompatibleError("process_wrong_login no longer counts attempts")
+    # HA counts failures with `app[KEY_FAILED_LOGIN_ATTEMPTS][ip] += 1`. Up to
+    # 2026.10 this lived in process_wrong_login; 2026.11 moved it into a
+    # helper. Look for the increment anywhere in the module, not one function.
+    if not _source_matches(ha_ban, _COUNTER_INCREMENT):
+        raise HookIncompatibleError("failed logins are no longer counted per address")
 
     http = getattr(hass, "http", None)
     app = getattr(http, "app", None)

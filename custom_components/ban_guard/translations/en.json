@@ -157,7 +157,7 @@
   "issues": {
     "hook_incompatible": {
       "title": "Ban Guard request protection is disabled",
-      "description": "This Home Assistant version changed the internals Ban Guard hooks into ({detail}). Ban Guard turned off request blocking and automatic bans; Home Assistant's built-in banning keeps working. Ban list editing still updates `ip_bans.yaml`. Update Ban Guard through HACS."
+      "description": "This Home Assistant version changed the internals Ban Guard hooks into ({detail}). Ban Guard turned off request blocking and automatic bans; Home Assistant's built-in banning keeps working. Ban list editing still updates `ip_bans.yaml`. Check for a Ban Guard update."
     },
     "ip_ban_disabled": {
       "title": "Home Assistant IP banning is turned off",

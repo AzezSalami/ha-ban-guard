@@ -196,3 +196,30 @@ async def test_uninstall_survives_errors(manager: BanGuardManager) -> None:
     assert manager.hook is not None
     with patch.object(manager.hook, "delegate_threshold", side_effect=RuntimeError):
         manager.hook.uninstall()  # logged, not raised
+
+
+@pytest.mark.parametrize(
+    ("source", "compatible"),
+    [
+        # HA <= 2026.10: counted inside process_wrong_login
+        ("    request.app[KEY_FAILED_LOGIN_ATTEMPTS][remote_addr] += 1\n", True),
+        # HA 2026.11: counted in _async_count_wrong_login(app, ...)
+        ("    app[KEY_FAILED_LOGIN_ATTEMPTS][remote_addr] += 1\n", True),
+        # Counter no longer incremented per address
+        ("    history = app[KEY_FAILED_LOGIN_ATTEMPTS]\n", False),
+    ],
+)
+def test_counter_increment_detection(source: str, compatible: bool) -> None:
+    with patch.object(ha_hook.inspect, "getsource", return_value=source):
+        assert ha_hook._source_matches(ha_ban, ha_hook._COUNTER_INCREMENT) is compatible
+    with patch.object(ha_hook.inspect, "getsource", side_effect=OSError):
+        assert ha_hook._source_matches(ha_ban, ha_hook._COUNTER_INCREMENT) is True
+
+
+async def test_compat_counter_missing(hass: HomeAssistant) -> None:
+    await setup_deps(hass)
+    with (
+        patch.object(ha_hook, "_source_matches", return_value=False),
+        pytest.raises(HookIncompatibleError, match="no longer counted"),
+    ):
+        await hass.async_add_executor_job(check_compatibility, hass)
