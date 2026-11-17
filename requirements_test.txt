@@ -1,0 +1,4 @@
+# Test against the current Home Assistant release supported by
+# pytest-homeassistant-custom-component. Bumped by .github/workflows/ha-compat.yml.
+pytest-homeassistant-custom-component==0.13.375
+pytest-cov==7.0.0

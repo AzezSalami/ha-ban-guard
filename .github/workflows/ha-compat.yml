@@ -1,0 +1,117 @@
+name: Home Assistant compatibility
+
+# Weekly: run the test suite against the newest Home Assistant release and the
+# current beta. If a new release passes, open a PR raising the tested version
+# (requirements_test.txt). If anything fails, open an issue with the log.
+# Merged PRs flow into the next release-please release, so HACS users get the
+# fix without manual steps.
+
+on:
+  schedule:
+    - cron: "17 3 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  latest:
+    name: Latest Home Assistant release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - id: versions
+        run: python scripts/ha_compat.py latest
+      - name: Run tests
+        id: tests
+        if: steps.versions.outputs.newer == 'true'
+        continue-on-error: true
+        env:
+          HARNESS: ${{ steps.versions.outputs.harness }}
+        run: |
+          set -o pipefail
+          pip install "pytest-homeassistant-custom-component==${HARNESS}" pytest-cov 2>&1 | tail -5
+          python -m pytest -p no:cacheprovider -q 2>&1 | tee pytest.log
+      - name: Open PR raising the tested version
+        if: steps.versions.outputs.newer == 'true' && steps.tests.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.BOT_TOKEN || github.token }}
+          HARNESS: ${{ steps.versions.outputs.harness }}
+          HA: ${{ steps.versions.outputs.ha_version }}
+        run: |
+          branch="ha-compat/${HA}"
+          if gh pr list --head "$branch" --state open --json number --jq '.[0].number' | grep -q .; then
+            echo "PR already open"; exit 0
+          fi
+          python scripts/ha_compat.py bump "$HARNESS"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git commit -am "chore(ci): test against Home Assistant ${HA}"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$branch"
+          gh pr create --head "$branch" --title "chore(ci): test against Home Assistant ${HA}" \
+            --body "The test suite passes against Home Assistant ${HA} (pytest-homeassistant-custom-component ${HARNESS}). This raises the tested version."
+      - name: Open issue with the failure log
+        if: steps.versions.outputs.newer == 'true' && steps.tests.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HA: ${{ steps.versions.outputs.ha_version }}
+        run: |
+          title="Tests fail on Home Assistant ${HA}"
+          if gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number' | grep -q .; then
+            echo "Issue already open"; exit 0
+          fi
+          { echo "The weekly compatibility run failed against Home Assistant ${HA}."; echo;
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"; echo;
+            echo '```'; tail -n 150 pytest.log; echo '```'; } > body.md
+          gh issue create --title "$title" --body-file body.md
+
+  beta:
+    name: Home Assistant beta
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - id: versions
+        run: python scripts/ha_compat.py beta
+      - name: Run tests against the beta
+        id: tests
+        if: steps.versions.outputs.beta != ''
+        continue-on-error: true
+        env:
+          BETA: ${{ steps.versions.outputs.beta }}
+        run: |
+          set -o pipefail
+          pip install -r requirements_test.txt 2>&1 | tail -3
+          pip install --upgrade "homeassistant==${BETA}" 2>&1 | tail -3
+          python -m pytest -p no:cacheprovider -q 2>&1 | tee pytest.log
+      - name: Open issue with the failure log
+        if: steps.versions.outputs.beta != '' && steps.tests.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BETA: ${{ steps.versions.outputs.beta }}
+        run: |
+          title="Tests fail on Home Assistant ${BETA}"
+          if gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number' | grep -q .; then
+            echo "Issue already open"; exit 0
+          fi
+          { echo "The weekly beta run failed against Home Assistant ${BETA}."; echo;
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"; echo;
+            echo '```'; tail -n 150 pytest.log; echo '```'; } > body.md
+          gh issue create --title "$title" --body-file body.md

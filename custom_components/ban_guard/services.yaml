@@ -1,0 +1,63 @@
+ban:
+  fields:
+    ip:
+      required: true
+      example: "203.0.113.7"
+      selector:
+        text:
+    reason:
+      example: "Port scan"
+      selector:
+        text:
+    duration:
+      default: permanent
+      example: "24h"
+      selector:
+        text:
+
+unban:
+  fields:
+    ip:
+      required: true
+      example: "203.0.113.7"
+      selector:
+        text:
+          multiple: true
+
+allow:
+  fields:
+    value:
+      required: true
+      example: "192.168.1.0/24"
+      selector:
+        text:
+    comment:
+      selector:
+        text:
+
+disallow:
+  fields:
+    value:
+      required: true
+      example: "192.168.1.0/24"
+      selector:
+        text:
+
+purge_expired:
+
+import:
+  fields:
+    data:
+      required: true
+      selector:
+        object:
+    dry_run:
+      default: true
+      selector:
+        boolean:
+    include_settings:
+      default: false
+      selector:
+        boolean:
+
+export:

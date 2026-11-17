@@ -1,0 +1,107 @@
+blueprint:
+  name: Ban Guard – mobile notifications
+  description: >
+    Forward Ban Guard events (bans, repeated failed logins, failed logins from
+    allowlisted addresses) to a mobile app notify service, with actionable
+    "Unban" and "Allowlist" buttons. The buttons call Ban Guard's admin-only
+    actions as this automation, so only install this for devices you trust.
+  domain: automation
+  source_url: https://github.com/AzezSalami/ha-ban-guard/blob/main/blueprints/automation/ban_guard/notify_mobile.yaml
+  input:
+    notify_service:
+      name: Notify service
+      description: For example notify.mobile_app_my_phone
+      selector:
+        text:
+    event_types:
+      name: Events to forward
+      default: [ban, repeated_failures, allowlisted_failure]
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: Address banned
+              value: ban
+            - label: Repeated failed logins
+              value: repeated_failures
+            - label: Failed login from allowlisted address
+              value: allowlisted_failure
+            - label: Ban lifted
+              value: unban
+
+mode: queued
+max: 20
+
+variables:
+  event_types: !input event_types
+  notify_service: !input notify_service
+
+trigger:
+  - platform: event
+    event_type: ban_guard_event
+    id: ban_guard
+  - platform: event
+    event_type: mobile_app_notification_action
+    id: action
+
+condition:
+  - condition: or
+    conditions:
+      - condition: template
+        value_template: >
+          {{ trigger.id == 'ban_guard' and trigger.event.data.type in event_types }}
+      - condition: template
+        value_template: >
+          {{ trigger.id == 'action' and
+             (trigger.event.data.action | default('')).startswith('BAN_GUARD_') }}
+
+action:
+  - choose:
+      - conditions: "{{ trigger.id == 'ban_guard' }}"
+        sequence:
+          - variables:
+              ip: "{{ trigger.event.data.ip }}"
+              kind: "{{ trigger.event.data.type }}"
+              titles:
+                ban: "Address banned"
+                unban: "Ban lifted"
+                repeated_failures: "Repeated failed logins"
+                allowlisted_failure: "Failed login from allowlisted address"
+          - service: "{{ notify_service }}"
+            data:
+              title: "Ban Guard: {{ titles[kind] | default(kind) }}"
+              message: >
+                {{ ip }}{% if trigger.event.data.reason is defined and trigger.event.data.reason %}
+                – {{ trigger.event.data.reason }}{% endif %}{% if trigger.event.data.count is defined %}
+                ({{ trigger.event.data.count }} attempts){% endif %}
+              data:
+                tag: "ban_guard_{{ ip | replace(':', '_') | replace('/', '_') }}"
+                actions: >
+                  {% if kind == 'ban' %}
+                  [{"action": "BAN_GUARD_UNBAN|{{ ip }}", "title": "Unban"},
+                   {"action": "BAN_GUARD_ALLOW|{{ ip }}", "title": "Unban and allowlist"}]
+                  {% elif kind == 'repeated_failures' %}
+                  [{"action": "BAN_GUARD_ALLOW|{{ ip }}", "title": "Allowlist"}]
+                  {% else %}[]{% endif %}
+      - conditions: "{{ trigger.id == 'action' }}"
+        sequence:
+          - variables:
+              parts: "{{ trigger.event.data.action.split('|', 1) }}"
+              verb: "{{ parts[0] }}"
+              ip: "{{ parts[1] }}"
+          - if:
+              - condition: template
+                value_template: "{{ verb in ['BAN_GUARD_UNBAN', 'BAN_GUARD_ALLOW'] }}"
+            then:
+              - service: ban_guard.unban
+                continue_on_error: true
+                data:
+                  ip: "{{ ip }}"
+          - if:
+              - condition: template
+                value_template: "{{ verb == 'BAN_GUARD_ALLOW' }}"
+            then:
+              - service: ban_guard.allow
+                data:
+                  value: "{{ ip }}"
+                  comment: "Allowlisted from a mobile notification"

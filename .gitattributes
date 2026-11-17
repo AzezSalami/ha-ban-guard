@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.png binary
+# Built panel bundle: compared byte-for-byte in CI, never normalised.
+custom_components/ban_guard/frontend/ban-guard-panel.js -text -diff linguist-generated
+frontend/package-lock.json linguist-generated

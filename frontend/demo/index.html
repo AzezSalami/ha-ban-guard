@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ban Guard panel demo</title>
+    <!--
+      Development-only harness: renders the built panel with a mocked `hass`
+      object and fake data so the UI can be checked and screenshotted without
+      a Home Assistant instance. Not shipped in the release zip.
+      Open via `node demo/serve.mjs` then http://localhost:4173/frontend/demo/?tab=bans&theme=dark
+    -->
+    <style>
+      :root {
+        --primary-color: #03a9f4;
+        --primary-text-color: #212121;
+        --secondary-text-color: #727272;
+        --text-primary-color: #fff;
+        --primary-background-color: #fafafa;
+        --secondary-background-color: #f0f0f0;
+        --card-background-color: #fff;
+        --divider-color: rgba(0, 0, 0, 0.12);
+        --error-color: #db4437;
+        --warning-color: #ffa600;
+        --success-color: #43a047;
+        --sidebar-background-color: #323232;
+        font-family: Roboto, "Segoe UI", system-ui, sans-serif;
+      }
+      :root.dark {
+        --primary-text-color: #e1e1e1;
+        --secondary-text-color: #9b9b9b;
+        --primary-background-color: #111;
+        --secondary-background-color: #202020;
+        --card-background-color: #1c1c1c;
+        --divider-color: rgba(225, 225, 225, 0.12);
+      }
+      body {
+        margin: 0;
+        background: var(--primary-background-color);
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      const params = new URLSearchParams(location.search);
+      if (params.get("theme") === "dark") document.documentElement.classList.add("dark");
+      if (params.get("tab")) location.hash = params.get("tab");
+
+      // Minimal stand-in for HA's <ha-icon>: draws nothing but keeps layout.
+      customElements.define("ha-icon", class extends HTMLElement {
+        connectedCallback() {
+          this.style.cssText = "display:inline-block;width:var(--mdc-icon-size,24px);height:var(--mdc-icon-size,24px);border-radius:50%;background:currentColor;opacity:.25;vertical-align:middle";
+        }
+      });
+
+      const now = Date.now();
+      const iso = (offsetMs) => new Date(now + offsetMs).toISOString();
+      const H = 3600e3;
+      const bans = [
+        { ip: "185.220.101.34", reason: "5 failed logins in 15 min", source: "automatic", created_by: null, created_at: iso(-2 * H), expires_at: iso(22 * H), offense: 2, single: true, country: "DE", city: "Frankfurt", in_ip_bans_yaml: false },
+        { ip: "45.155.205.0/24", reason: "Scanner network", source: "manual", created_by: "Alex", created_at: iso(-30 * H), expires_at: null, offense: 0, single: false, country: "NL", city: null, in_ip_bans_yaml: false },
+        { ip: "103.145.13.9", reason: "5 failed logins in 15 min", source: "automatic", created_by: null, created_at: iso(-0.4 * H), expires_at: iso(0.6 * H), offense: 1, single: true, country: "VN", city: "Hanoi", in_ip_bans_yaml: false },
+        { ip: "2001:db8:dead::/48", reason: "Imported from old server", source: "imported", created_by: "Alex", created_at: iso(-200 * H), expires_at: null, offense: 0, single: false, country: null, city: null, in_ip_bans_yaml: false },
+        { ip: "198.51.100.23", reason: "", source: "home_assistant", created_by: null, created_at: iso(-500 * H), expires_at: null, offense: 0, single: true, country: "US", city: "Ashburn", in_ip_bans_yaml: true },
+      ];
+      const allowlist = [
+        { value: "192.168.1.0/24", comment: "Home LAN", created_by: "Alex", created_at: iso(-900 * H), resolved: [], resolved_at: null, hostname: false },
+        { value: "vpn.example.net", comment: "WireGuard endpoint", created_by: "Alex", created_at: iso(-300 * H), resolved: ["203.0.113.40"], resolved_at: iso(-0.2 * H), hostname: true },
+      ];
+      const types = ["failed_login", "failed_login", "blocked", "ban", "failed_login", "unban", "allow", "expired", "allowlisted_failure"];
+      const ips = ["185.220.101.34", "103.145.13.9", "45.155.205.17", "185.220.101.34", "91.240.118.5", "198.51.100.23", "192.168.1.0/24", "103.145.13.9", "203.0.113.40"];
+      const cc = ["DE", "VN", "NL", "DE", "RU", "US", null, "VN", null];
+      const activity = types.map((type, i) => ({
+        id: 100 - i, ts: iso(-i * 0.37 * H), type, ip: ips[i], country: cc[i],
+        path: type === "blocked" ? "/api/websocket" : type.includes("failed") ? "/auth/login_flow/<redacted>" : null,
+        user_agent: type.includes("failed") ? "Mozilla/5.0 (X11; Linux x86_64)" : null,
+        detail: type === "ban" ? "5 failed logins in 15 min" : type === "blocked" ? "ban" : null,
+        user: type === "allow" ? "Alex" : null,
+      }));
+      const status = {
+        hook: "active", protection_enabled: true, ha_login_threshold: -1,
+        geoip: { enabled: true, loaded: true, edition: "country", error: null },
+        rdns: true, doh: false, npm: { enabled: false },
+        country_rules: { allow: [], deny: ["KP"] }, under_attack: false,
+      };
+      const overview = {
+        active_bans: bans.length, allowlist: allowlist.length, recent_failures: 3,
+        last_ban: { ip: "103.145.13.9", reason: "5 failed logins in 15 min", created_at: iso(-0.4 * H), country: "VN" },
+        status, failed_logins_24h: 37, bans_24h: 2, blocked_24h: 412,
+        failed_logins_7d: [12, 4, 9, 31, 18, 6, 37].map((count, i) => ({ date: new Date(now - (6 - i) * 24 * H).toISOString().slice(0, 10), count })),
+        top_ips: [{ ip: "185.220.101.34", count: 214 }, { ip: "45.155.205.17", count: 120 }, { ip: "103.145.13.9", count: 45 }, { ip: "91.240.118.5", count: 12 }],
+        top_countries: [{ country: "DE", count: 214 }, { country: "NL", count: 120 }, { country: "VN", count: 45 }, { country: "RU", count: 12 }],
+      };
+      const settings = {
+        entry_id: "demo", requester_ip: "192.168.1.23", npm_addon: null, status,
+        options: { protection_enabled: true, threshold: 5, window_minutes: 15, escalation: "1h, 24h, permanent", notify_persistent: true, log_retention_days: 30, log_max_entries: 5000 },
+      };
+      const history = (ip) => ({
+        ip, ban: bans.find((b) => b.ip === ip) ?? null, geo: { country: "DE", country_name: "Germany", city: "Frankfurt" },
+        hostname: "tor-exit.example.org", offenses: 2, allowlisted: false, activity: activity.filter((a) => a.ip === ip),
+      });
+      const replies = {
+        overview: () => overview, bans: () => ({ bans }), allowlist: () => ({ allowlist }),
+        activity: () => ({ entries: activity }), settings: () => settings,
+        history: (m) => history(m.ip), export: () => ({ format: "ban_guard", version: 1, bans, allowlist, settings: {} }),
+      };
+      const hass = {
+        language: "en",
+        connection: {
+          async sendMessagePromise(msg) {
+            const key = msg.type.replace("ban_guard/", "");
+            if (replies[key]) return structuredClone(replies[key](msg));
+            return {};
+          },
+          async subscribeMessage() { return async () => {}; },
+        },
+      };
+      await import("../../custom_components/ban_guard/frontend/ban-guard-panel.js");
+      const panel = document.createElement("ban-guard-panel");
+      panel.hass = hass;
+      panel.narrow = window.innerWidth < 600;
+      document.body.append(panel);
+      if (params.get("details")) setTimeout(() => panel.shadowRoot && (panel["details"] = params.get("details")), 300);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,250 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Ban Guard",
+        "description": "Ban Guard manages Home Assistant's IP bans, adds an allowlist and protects against failed-login attacks. It makes no outbound network calls unless you turn on a feature that needs one.\n\nBan Guard never bans loopback, this host's own addresses, the Supervisor network or the address you are using right now.",
+        "data": {
+          "protection_enabled": "Enable failed-login protection"
+        },
+        "data_description": {
+          "protection_enabled": "Ban addresses automatically after repeated failed logins. While on, Ban Guard replaces Home Assistant's `login_attempts_threshold`; it is restored when Ban Guard is removed or disabled."
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Ban Guard is already set up.",
+      "single_instance_allowed": "Ban Guard is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ban Guard settings",
+        "menu_options": {
+          "protection": "Failed-login protection",
+          "notifications": "Notifications",
+          "logging": "Activity log and allowlist",
+          "enrichment": "GeoIP and DNS lookups",
+          "countries": "Country rules",
+          "npm": "Nginx Proxy Manager sync"
+        }
+      },
+      "protection": {
+        "title": "Failed-login protection",
+        "description": "Ban an address after too many failed logins within a time window. Each repeat offence uses the next step of the escalation ladder.",
+        "data": {
+          "protection_enabled": "Enable failed-login protection",
+          "threshold": "Failed logins before a ban",
+          "window_minutes": "Time window",
+          "escalation": "Escalation ladder",
+          "network_overrides": "Per-network overrides",
+          "repeated_failures_threshold": "Warn after this many failures",
+          "attack_threshold": "Under-attack threshold",
+          "attack_window_minutes": "Under-attack window"
+        },
+        "data_description": {
+          "escalation": "Comma-separated ban durations for the 1st, 2nd, 3rd… offence. Units: s, m, h, d, w. `permanent` may only be last. Example: `1h, 24h, permanent`.",
+          "network_overrides": "One rule per line: `CIDR: threshold/minutes` or `CIDR: off`. Example: `192.168.0.0/16: 20/60`. The most specific network wins.",
+          "repeated_failures_threshold": "Fire a `repeated_failures` event and notification at this count (0 turns it off).",
+          "attack_threshold": "The \"Under attack\" sensor turns on when this many failed logins happen within the window, from any address."
+        }
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Ban Guard always fires the `ban_guard_event` event. Use the bundled blueprint to forward events to the mobile app.",
+        "data": {
+          "notify_persistent": "Show persistent notifications",
+          "notify_allowlisted_failures": "Report failed logins from allowlisted addresses"
+        }
+      },
+      "logging": {
+        "title": "Activity log and allowlist",
+        "description": "The activity log is kept in `.storage/ban_guard.activity`. Query strings and credentials are never stored; secret parts of URLs such as webhook ids are redacted.",
+        "data": {
+          "log_retention_days": "Keep entries for",
+          "log_max_entries": "Maximum entries",
+          "log_blocked_requests": "Log blocked requests",
+          "allowlist_refresh_minutes": "Re-resolve allowlisted hostnames every"
+        },
+        "data_description": {
+          "log_blocked_requests": "At most one entry per address per minute.",
+          "allowlist_refresh_minutes": "Hostname lookups use your system resolver, or DNS-over-HTTPS if enabled."
+        }
+      },
+      "enrichment": {
+        "title": "GeoIP and DNS lookups",
+        "description": "Each option below is off by default and makes outbound calls when turned on:\n\n• **GeoIP** downloads the free DB-IP Lite database from `download.db-ip.com` once a month. Lookups happen locally; no addresses are sent. Data by DB-IP.com, licensed CC BY 4.0.\n• **Reverse DNS** sends PTR queries for addresses shown in the panel to your system's DNS resolver.\n• **DNS-over-HTTPS** sends those PTR queries, and allowlist hostname lookups, to the HTTPS endpoint below instead. The endpoint operator sees the addresses being looked up.",
+        "data": {
+          "geoip_enabled": "Enable GeoIP (downloads from download.db-ip.com)",
+          "geoip_edition": "GeoIP database",
+          "geoip_max_mb": "Maximum database size",
+          "rdns_enabled": "Enable reverse DNS (queries your DNS resolver)",
+          "doh_enabled": "Use DNS-over-HTTPS (sends queries to the URL below)",
+          "doh_url": "DNS-over-HTTPS endpoint (JSON API)"
+        },
+        "data_description": {
+          "geoip_edition": "Country is about 8 MB. City adds city names and is about 130 MB; it is held in memory.",
+          "geoip_max_mb": "Downloads larger than this are refused."
+        }
+      },
+      "countries": {
+        "title": "Country rules",
+        "description": "Requires GeoIP. Use ISO 3166-1 alpha-2 codes separated by commas, for example `DE, AT, CH`. Private, loopback, allowlisted and protected addresses are never blocked by country. Addresses whose country is unknown are allowed.",
+        "data": {
+          "country_allow": "Only allow these countries",
+          "country_deny": "Block these countries"
+        }
+      },
+      "npm": {
+        "title": "Nginx Proxy Manager sync",
+        "description": "Push the ban list into one Nginx Proxy Manager access list that Ban Guard owns: its client rules are replaced on every sync with `deny` rules for each ban followed by `allow all`. Calls go only to the URL below. The password is stored encrypted.\n\nDetected add-on: {addon}",
+        "data": {
+          "npm_enabled": "Enable sync",
+          "npm_url": "Nginx Proxy Manager URL",
+          "npm_username": "Email",
+          "npm_password": "Password",
+          "npm_verify_ssl": "Verify SSL certificate"
+        },
+        "data_description": {
+          "npm_url": "The admin interface, usually on port 81.",
+          "npm_password": "Leave empty to keep the stored password."
+        }
+      },
+      "npm_list": {
+        "title": "Choose the access list",
+        "description": "Pick an access list dedicated to Ban Guard. Its client rules will be overwritten.",
+        "data": {
+          "npm_access_list_id": "Access list"
+        }
+      }
+    },
+    "error": {
+      "invalid_threshold": "The threshold must be at least 1.",
+      "invalid_window": "The time window must be at least 1 minute.",
+      "invalid_duration": "A duration is not valid. Use values like 30m, 1h, 7d or permanent.",
+      "invalid_escalation": "The escalation ladder is not valid. Use values like `1h, 24h, permanent`; `permanent` may only be last.",
+      "invalid_override": "A network override line is not valid. Use `CIDR: threshold/minutes` or `CIDR: off`.",
+      "invalid_country": "Use two-letter ISO country codes such as DE or US.",
+      "country_conflict": "A country cannot be both allowed and blocked.",
+      "geoip_required": "Turn on GeoIP first.",
+      "invalid_doh_url": "The DNS-over-HTTPS URL must start with https://.",
+      "cannot_connect": "Could not connect to Nginx Proxy Manager.",
+      "invalid_auth": "Nginx Proxy Manager rejected the credentials.",
+      "not_found": "Nginx Proxy Manager API not found at this URL.",
+      "no_access_lists": "Create an access list in Nginx Proxy Manager first."
+    }
+  },
+  "selector": {
+    "geoip_edition": {
+      "options": {
+        "country": "Country (small)",
+        "city": "City (large)"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "active_bans": { "name": "Active bans" },
+      "bans_24h": { "name": "Bans in the last 24 hours" },
+      "failed_logins_24h": { "name": "Failed logins in the last 24 hours" },
+      "last_banned_ip": { "name": "Last banned IP" }
+    },
+    "binary_sensor": {
+      "under_attack": { "name": "Under attack" }
+    }
+  },
+  "issues": {
+    "hook_incompatible": {
+      "title": "Ban Guard request protection is disabled",
+      "description": "This Home Assistant version changed the internals Ban Guard hooks into ({detail}). Ban Guard turned off request blocking and automatic bans; Home Assistant's built-in banning keeps working. Ban list editing still updates `ip_bans.yaml`. Update Ban Guard through HACS."
+    },
+    "ip_ban_disabled": {
+      "title": "Home Assistant IP banning is turned off",
+      "description": "Ban Guard needs `ip_ban_enabled: true` (the default) in the `http:` section of `configuration.yaml`. Until it is enabled, bans are recorded but not enforced."
+    },
+    "hook_runtime_error": {
+      "title": "Ban Guard request protection stopped after errors",
+      "description": "Ban Guard hit repeated errors while checking requests ({detail}) and turned request blocking off to keep Home Assistant working. Home Assistant's built-in banning still works. Reload Ban Guard to try again, and please report the error."
+    },
+    "geoip_failed": {
+      "title": "Ban Guard could not load the GeoIP database",
+      "description": "Downloading or reading the DB-IP Lite database failed: {detail}. Country information and country rules are unavailable until it succeeds."
+    },
+    "npm_failed": {
+      "title": "Ban Guard could not sync to Nginx Proxy Manager",
+      "description": "The last sync failed ({detail}). Check the URL and credentials in Ban Guard's options."
+    }
+  },
+  "exceptions": {
+    "not_loaded": { "message": "Ban Guard is not loaded." },
+    "invalid_ip": { "message": "{ip} is not a valid IP address or CIDR range." },
+    "invalid_source": { "message": "Unknown ban source {source}." },
+    "invalid_duration": { "message": "{value} is not a valid duration. Use values like 30m, 1h, 7d or permanent." },
+    "invalid_allow": { "message": "{value} is not a valid IP address, CIDR range or hostname." },
+    "expiry_in_past": { "message": "The ban on {ip} would already have expired." },
+    "not_banned": { "message": "{ip} is not banned." },
+    "not_allowlisted": { "message": "{value} is not on the allowlist." },
+    "allowlisted": { "message": "{ip} is on the allowlist. Remove it from the allowlist first." },
+    "protected_loopback": { "message": "Refused: banning {ip} would cover the loopback range {protected}." },
+    "protected_unspecified": { "message": "Refused: banning {ip} would cover {protected}." },
+    "protected_host": { "message": "Refused: banning {ip} would cover this Home Assistant host's own address {protected}." },
+    "protected_supervisor": { "message": "Refused: banning {ip} would cover the Supervisor network {protected}." },
+    "protected_proxy": { "message": "Refused: banning {ip} would cover the trusted proxy {protected}." },
+    "protected_admin": { "message": "Refused: banning {ip} would cover {protected}, which an administrator used in the last day." },
+    "protected_current": { "message": "Refused: banning {ip} would cover your current address {protected}." },
+    "import_invalid_format": { "message": "This is not a Ban Guard backup." },
+    "import_unsupported_version": { "message": "This backup was made by a newer version of Ban Guard." },
+    "import_too_large": { "message": "The backup has more than {limit} items." }
+  },
+  "services": {
+    "ban": {
+      "name": "Ban",
+      "description": "Bans an IP address or CIDR range.",
+      "fields": {
+        "ip": { "name": "IP address or range", "description": "Single address or CIDR, IPv4 or IPv6." },
+        "reason": { "name": "Reason", "description": "Shown in the ban list." },
+        "duration": { "name": "Duration", "description": "For example 30m, 24h, 7d, or permanent." }
+      }
+    },
+    "unban": {
+      "name": "Unban",
+      "description": "Lifts one or more bans.",
+      "fields": {
+        "ip": { "name": "IP addresses or ranges", "description": "Exactly as they appear in the ban list." }
+      }
+    },
+    "allow": {
+      "name": "Allowlist",
+      "description": "Adds an IP address, CIDR range or hostname to the allowlist. Allowlisted addresses are never banned.",
+      "fields": {
+        "value": { "name": "Address, range or hostname", "description": "Hostnames are re-resolved periodically." },
+        "comment": { "name": "Comment", "description": "Why this entry exists." }
+      }
+    },
+    "disallow": {
+      "name": "Remove from allowlist",
+      "description": "Removes an entry from the allowlist.",
+      "fields": {
+        "value": { "name": "Address, range or hostname", "description": "Exactly as it appears in the allowlist." }
+      }
+    },
+    "purge_expired": {
+      "name": "Lift expired bans",
+      "description": "Lifts every ban whose expiry has passed (this also happens automatically every 30 seconds)."
+    },
+    "import": {
+      "name": "Import backup",
+      "description": "Imports bans, allowlist and optionally settings from a Ban Guard JSON backup. Runs as a dry run by default and returns a preview.",
+      "fields": {
+        "data": { "name": "Backup", "description": "The JSON object produced by the export action." },
+        "dry_run": { "name": "Dry run", "description": "Only validate and return what would change." },
+        "include_settings": { "name": "Include settings", "description": "Also apply settings from the backup." }
+      }
+    },
+    "export": {
+      "name": "Export backup",
+      "description": "Returns a JSON backup of bans, allowlist and settings. Stored credentials are never included."
+    }
+  }
+}

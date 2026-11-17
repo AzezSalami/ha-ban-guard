@@ -1,0 +1,22 @@
+{
+  "entity": {
+    "sensor": {
+      "active_bans": { "default": "mdi:shield-lock" },
+      "bans_24h": { "default": "mdi:shield-alert" },
+      "failed_logins_24h": { "default": "mdi:account-alert" },
+      "last_banned_ip": { "default": "mdi:ip-network" }
+    },
+    "binary_sensor": {
+      "under_attack": { "default": "mdi:shield-check", "state": { "on": "mdi:shield-alert" } }
+    }
+  },
+  "services": {
+    "ban": { "service": "mdi:cancel" },
+    "unban": { "service": "mdi:lock-open-variant" },
+    "allow": { "service": "mdi:playlist-check" },
+    "disallow": { "service": "mdi:playlist-remove" },
+    "purge_expired": { "service": "mdi:broom" },
+    "import": { "service": "mdi:import" },
+    "export": { "service": "mdi:export" }
+  }
+}

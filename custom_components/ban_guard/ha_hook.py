@@ -1,0 +1,293 @@
+"""The only module that touches Home Assistant's `http.ban` internals.
+
+Ban Guard needs two things from Home Assistant's HTTP ban machinery:
+
+1. To decide whether a request is blocked. HA's `ban_middleware` evaluates
+   `ip_address in ban_manager.ip_bans_lookup`. We replace that dict with a
+   subclass whose `__contains__` additionally consults Ban Guard (CIDR bans,
+   temporary bans, country rules) and refuses to block protected or
+   allowlisted addresses.
+2. To see failed logins. HA's `process_wrong_login` increments
+   `app[KEY_FAILED_LOGIN_ATTEMPTS][ip]`. We replace that defaultdict with a
+   subclass whose `__setitem__` reports increments to Ban Guard.
+
+Both wrappers catch every exception from Ban Guard and fall back to plain
+dict behaviour, so a bug here can never block a request or crash HA.
+`check_compatibility` runs at startup; if anything we rely on is missing the
+feature is disabled and a repair issue is raised, leaving HA's own banning
+untouched.
+"""
+
+from __future__ import annotations
+
+from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass
+import inspect
+import logging
+from typing import Any, Protocol
+import warnings
+
+from homeassistant.core import HomeAssistant
+
+from .iputil import IPAddress
+
+_LOGGER = logging.getLogger(__name__)
+
+# Large enough that HA's own threshold never triggers while Ban Guard decides.
+_DELEGATED_THRESHOLD = 2**31 - 1
+_MAX_COUNTER_ENTRIES = 10_000
+
+
+class HookIncompatibleError(Exception):
+    """Home Assistant internals are not what this version expects."""
+
+
+class BansDisabledError(Exception):
+    """`http: ip_ban_enabled` is false, so there is nothing to hook into."""
+
+
+class Hooks(Protocol):
+    """Callbacks implemented by the Ban Guard manager."""
+
+    def hook_active(self) -> bool:
+        """Return True if Ban Guard may block addresses not in HA's list."""
+
+    def hook_is_blocked(self, addr: IPAddress, in_ha_list: bool) -> bool:
+        """Return the final blocking decision."""
+
+    def hook_failed_login(self, addr: IPAddress) -> None:
+        """Report a failed login."""
+
+    def hook_ha_ban(self, addr: IPAddress) -> None:
+        """Report that HA added a ban by itself."""
+
+    def hook_error(self, err: BaseException) -> None:
+        """Report an unexpected exception inside a hook."""
+
+
+@dataclass(slots=True)
+class Targets:
+    """Objects inside Home Assistant that we hook."""
+
+    app: Any
+    manager: Any
+    ip_ban_cls: type
+    key_attempts: Any
+    key_threshold: Any
+    bans_path: str
+    attr_banned_at: str
+
+
+class BanLookup(dict[Any, Any]):
+    """Replacement for `IpBanManager.ip_bans_lookup`."""
+
+    __slots__ = ("_hooks",)
+
+    def __init__(self, hooks: Hooks, base: dict[Any, Any]) -> None:
+        """Init with the existing HA entries."""
+        super().__init__(base)
+        self._hooks = hooks
+
+    def __contains__(self, key: object) -> bool:
+        """Blocking decision used by HA's ban middleware."""
+        in_list = dict.__contains__(self, key)
+        try:
+            return self._hooks.hook_is_blocked(key, in_list)  # type: ignore[arg-type]
+        except Exception as err:  # noqa: BLE001 - must never break requests
+            _safe_report(self._hooks, err)
+            return in_list
+
+    def __bool__(self) -> bool:
+        """Make HA's middleware consult us even when its own list is empty."""
+        try:
+            if self._hooks.hook_active():
+                return True
+        except Exception as err:  # noqa: BLE001
+            _safe_report(self._hooks, err)
+        return dict.__len__(self) > 0
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        """HA adds a ban (its own threshold was reached)."""
+        dict.__setitem__(self, key, value)
+        try:
+            self._hooks.hook_ha_ban(key)
+        except Exception as err:  # noqa: BLE001
+            _safe_report(self._hooks, err)
+
+
+class FailedLoginCounter(defaultdict[Any, int]):
+    """Replacement for `app[KEY_FAILED_LOGIN_ATTEMPTS]`."""
+
+    __slots__ = ("_hooks",)
+
+    def __init__(self, hooks: Hooks, base: dict[Any, int]) -> None:
+        """Init with existing counts."""
+        super().__init__(int, base)
+        self._hooks = hooks
+
+    def __setitem__(self, key: Any, value: int) -> None:
+        """Intercept `counter[ip] += 1` from HA's `process_wrong_login`."""
+        previous = dict.get(self, key, 0)
+        if dict.__len__(self) >= _MAX_COUNTER_ENTRIES:
+            dict.clear(self)
+        dict.__setitem__(self, key, value)
+        if value > previous:
+            try:
+                self._hooks.hook_failed_login(key)
+            except Exception as err:  # noqa: BLE001
+                _safe_report(self._hooks, err)
+
+    def __reduce__(self) -> Any:  # pragma: no cover - not pickled in practice
+        """Pickle as a plain defaultdict."""
+        return (defaultdict, (int, dict(self)))
+
+
+def _safe_report(hooks: Hooks, err: BaseException) -> None:
+    try:
+        hooks.hook_error(err)
+    except Exception:
+        _LOGGER.exception("Ban Guard hook error handler failed")
+
+
+def _source_contains(func: Callable[..., Any], needle: str) -> bool:
+    try:
+        return needle in inspect.getsource(func)
+    except (OSError, TypeError):
+        # Source unavailable (e.g. frozen build); trust the attribute checks.
+        return True
+
+
+def check_compatibility(hass: HomeAssistant) -> Targets:
+    """Verify HA internals. Does blocking I/O (source reads): run in executor."""
+    try:
+        from homeassistant.components.http import ban as ha_ban  # noqa: PLC0415
+    except ImportError as err:
+        raise HookIncompatibleError("homeassistant.components.http.ban missing") from err
+
+    required = (
+        "KEY_BAN_MANAGER",
+        "KEY_FAILED_LOGIN_ATTEMPTS",
+        "KEY_LOGIN_THRESHOLD",
+        "IpBan",
+        "IpBanManager",
+        "IP_BANS_FILE",
+        "ATTR_BANNED_AT",
+        "ban_middleware",
+        "process_wrong_login",
+    )
+    missing = [name for name in required if not hasattr(ha_ban, name)]
+    if missing:
+        raise HookIncompatibleError(f"missing attributes: {', '.join(missing)}")
+
+    if not _source_contains(ha_ban.ban_middleware, "in ip_bans_lookup"):
+        raise HookIncompatibleError("ban_middleware no longer checks ip_bans_lookup")
+    if not _source_contains(ha_ban.process_wrong_login, "KEY_FAILED_LOGIN_ATTEMPTS"):
+        raise HookIncompatibleError("process_wrong_login no longer counts attempts")
+
+    http = getattr(hass, "http", None)
+    app = getattr(http, "app", None)
+    if app is None:
+        raise HookIncompatibleError("hass.http.app unavailable")
+    if ha_ban.KEY_BAN_MANAGER not in app:
+        raise BansDisabledError
+    manager = app[ha_ban.KEY_BAN_MANAGER]
+    if not isinstance(getattr(manager, "ip_bans_lookup", None), dict):
+        raise HookIncompatibleError("IpBanManager.ip_bans_lookup is not a dict")
+    if not isinstance(app.get(ha_ban.KEY_FAILED_LOGIN_ATTEMPTS), dict):
+        raise HookIncompatibleError("failed login counter is not a dict")
+    if not isinstance(app.get(ha_ban.KEY_LOGIN_THRESHOLD), int):
+        raise HookIncompatibleError("login threshold is not an int")
+    path = getattr(manager, "path", None) or hass.config.path(ha_ban.IP_BANS_FILE)
+    return Targets(
+        app=app,
+        manager=manager,
+        ip_ban_cls=ha_ban.IpBan,
+        key_attempts=ha_ban.KEY_FAILED_LOGIN_ATTEMPTS,
+        key_threshold=ha_ban.KEY_LOGIN_THRESHOLD,
+        bans_path=str(path),
+        attr_banned_at=ha_ban.ATTR_BANNED_AT,
+    )
+
+
+def _set_app_state(app: Any, key: Any, value: Any) -> None:
+    """Set state on a started aiohttp app without the deprecation noise."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        app[key] = value
+
+
+class Hook:
+    """Install and remove the wrappers."""
+
+    def __init__(self, targets: Targets, hooks: Hooks) -> None:
+        """Init."""
+        self.targets = targets
+        self._hooks = hooks
+        self._original_threshold: int | None = None
+        self._delegating = False
+
+    @property
+    def installed(self) -> bool:
+        """True if our lookup is still in place."""
+        return isinstance(self.targets.manager.ip_bans_lookup, BanLookup)
+
+    def install(self) -> None:
+        """Install (or re-install) the lookup and counter wrappers."""
+        manager = self.targets.manager
+        if not isinstance(manager.ip_bans_lookup, BanLookup):
+            manager.ip_bans_lookup = BanLookup(self._hooks, manager.ip_bans_lookup)
+        app = self.targets.app
+        counter = app.get(self.targets.key_attempts)
+        if not isinstance(counter, FailedLoginCounter):
+            _set_app_state(
+                app, self.targets.key_attempts, FailedLoginCounter(self._hooks, counter or {})
+            )
+
+    def delegate_threshold(self, enabled: bool) -> None:
+        """Make HA count every failure but leave the ban decision to Ban Guard."""
+        app = self.targets.app
+        key = self.targets.key_threshold
+        if enabled and not self._delegating:
+            self._original_threshold = int(app[key])
+            _set_app_state(app, key, _DELEGATED_THRESHOLD)
+            self._delegating = True
+        elif not enabled and self._delegating:
+            _set_app_state(app, key, self._original_threshold)
+            self._delegating = False
+
+    @property
+    def original_threshold(self) -> int:
+        """HA's configured login threshold."""
+        if self._original_threshold is not None:
+            return self._original_threshold
+        return int(self.targets.app[self.targets.key_threshold])
+
+    def uninstall(self) -> None:
+        """Restore HA's plain objects."""
+        try:
+            self.delegate_threshold(False)
+            manager = self.targets.manager
+            if isinstance(manager.ip_bans_lookup, BanLookup):
+                manager.ip_bans_lookup = dict(manager.ip_bans_lookup.items())
+            app = self.targets.app
+            counter = app.get(self.targets.key_attempts)
+            if isinstance(counter, FailedLoginCounter):
+                _set_app_state(
+                    app, self.targets.key_attempts, defaultdict(int, dict(counter.items()))
+                )
+        except Exception:
+            _LOGGER.exception("Failed to restore Home Assistant ban internals")
+
+    def base_entries(self) -> dict[Any, Any]:
+        """HA's own in-memory bans."""
+        return dict(dict.items(self.targets.manager.ip_bans_lookup))
+
+    def set_base(self, addr: IPAddress, banned_at: Any) -> None:
+        """Add an entry to HA's in-memory list without triggering hook_ha_ban."""
+        entry = self.targets.ip_ban_cls(addr, banned_at)
+        dict.__setitem__(self.targets.manager.ip_bans_lookup, addr, entry)
+
+    def remove_base(self, addr: IPAddress) -> None:
+        """Remove an entry from HA's in-memory list."""
+        dict.pop(self.targets.manager.ip_bans_lookup, addr, None)

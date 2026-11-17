@@ -1,0 +1,25 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: For security problems use private vulnerability reporting instead (see SECURITY.md).
+  - type: input
+    id: versions
+    attributes:
+      label: Ban Guard and Home Assistant versions
+      placeholder: Ban Guard 0.1.0, Home Assistant 2026.11.2
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics or logs
+      description: The diagnostics download redacts IP addresses. Please remove any other personal data.
