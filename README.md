@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="custom_components/ban_guard/brand/dark_logo.png">
+    <img src="custom_components/ban_guard/brand/logo.png" alt="Ban Guard" height="96">
+  </picture>
+</p>
+
 # Ban Guard for Home Assistant
 
 See, ban, unban and allowlist the IP addresses that reach Home Assistant, and stop failed-login attacks, from an admin-only sidebar panel.

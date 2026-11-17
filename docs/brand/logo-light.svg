@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1500 460" width="3000" height="920">
+  <!-- Ban Guard logo (light theme): icon + wordmark. Wordmark set in Segoe UI Semibold. -->
+  <image href="icon.svg" x="0" y="0" width="460" height="460"/>
+  <text x="510" y="300" font-family="'Segoe UI', 'Segoe UI Variable Display', Roboto, Arial, sans-serif" font-weight="600" font-size="200" letter-spacing="-4" fill="#1F2937">Ban Guard</text>
+</svg>
