@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/AzezSalami/ha-ban-guard/compare/v1.1.0...v1.1.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* declare auth as an after-dependency for login logging ([6680db6](https://github.com/AzezSalami/ha-ban-guard/commit/6680db61b66c97564e34f0daf97bcac88dc3df30))
+
 ## [1.1.0](https://github.com/AzezSalami/ha-ban-guard/compare/v1.0.1...v1.1.0) (2026-11-17)
 
 
