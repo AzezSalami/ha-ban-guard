@@ -39,7 +39,7 @@ jobs:
           HARNESS: ${{ steps.versions.outputs.harness }}
         run: |
           set -o pipefail
-          pip install "pytest-homeassistant-custom-component==${HARNESS}" pytest-cov 2>&1 | tail -5
+          pip install "pytest-homeassistant-custom-component==${HARNESS}" 2>&1 | tail -5
           python -m pytest -p no:cacheprovider -q 2>&1 | tee pytest.log
       - name: Open PR raising the tested version
         if: steps.versions.outputs.newer == 'true' && steps.tests.outcome == 'success'

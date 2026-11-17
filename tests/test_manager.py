@@ -57,7 +57,8 @@ def bans_yaml(hass: HomeAssistant) -> dict[str, Any]:
 async def fail(hass: HomeAssistant, ip: str, times: int = 1) -> None:
     for _ in range(times):
         counter(hass)[addr(ip)] += 1
-    await hass.async_block_till_done()
+    # Automatic bans (and their ip_bans.yaml write) run as background tasks.
+    await hass.async_block_till_done(wait_background_tasks=True)
 
 
 async def test_ban_unban_round_trip(hass: HomeAssistant, manager: BanGuardManager) -> None:
