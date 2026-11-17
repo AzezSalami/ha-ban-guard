@@ -2,6 +2,7 @@
   "domain": "ban_guard",
   "name": "Ban Guard",
   "after_dependencies": [
+    "auth",
     "hassio"
   ],
   "codeowners": [
