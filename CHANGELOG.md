@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/AzezSalami/ha-ban-guard/compare/v1.0.1...v1.1.0) (2026-11-17)
+
+
+### Features
+
+* log successful logins in the activity log ([986023c](https://github.com/AzezSalami/ha-ban-guard/commit/986023c3a05f330faecdeb7d9490977c0bc29838))
+
 ## [1.0.1](https://github.com/AzezSalami/ha-ban-guard/compare/v1.0.0...v1.0.1) (2026-11-17)
 
 
