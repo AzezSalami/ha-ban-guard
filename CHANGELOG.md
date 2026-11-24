@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/AzezSalami/ha-ban-guard/compare/v1.3.0...v1.4.0) (2026-11-24)
+
+
+### Features
+
+* add Active sessions tab with disconnect and ban ([0d3ccbb](https://github.com/AzezSalami/ha-ban-guard/commit/0d3ccbb2809b8f74a48ec7ca3d4ac2a79029945a))
+
 ## [1.3.0](https://github.com/AzezSalami/ha-ban-guard/compare/v1.2.1...v1.3.0) (2026-11-24)
 
 
