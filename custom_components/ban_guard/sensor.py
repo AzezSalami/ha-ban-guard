@@ -55,6 +55,7 @@ class ActiveBansSensor(BanGuardEntity, SensorEntity):
             "permanent": sum(1 for b in bans if b.permanent),
             "temporary": sum(1 for b in bans if not b.permanent),
             "networks": sum(1 for b in bans if not b.single),
+            "not_enforced": sum(1 for b in bans if not self.manager.enforcement(b)["enforced"]),
         }
 
 

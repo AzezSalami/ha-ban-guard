@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { errorMessage } from "../api";
 import type { Ctx } from "../context";
 import { countdown, flag, formatCountdown, formatDateTime } from "../logic/format";
+import { describeEnforcement, needsAttention } from "../logic/enforcement";
 import { isDuration, isIPOrCIDR, splitEntries } from "../logic/ip";
 import {
   type BanKind,
@@ -23,7 +24,7 @@ const SOURCES: (Ban["source"] | "all")[] = [
   "imported",
   "home_assistant",
 ];
-const KINDS: BanKind[] = ["all", "permanent", "temporary", "network"];
+const KINDS: BanKind[] = ["all", "permanent", "temporary", "network", "unenforced"];
 
 @customElement("bg-bans")
 export class BgBans extends LitElement {
@@ -111,16 +112,49 @@ export class BgBans extends LitElement {
     this.busy = true;
     this.formError = "";
     try {
+      const created: Ban[] = [];
       for (const ip of ips) {
-        await this.ctx.api.ban(ip, this.form.reason, this.form.duration);
+        created.push(await this.ctx.api.ban(ip, this.form.reason, this.form.duration));
       }
       this.adding = false;
-      this.ctx.toast({ message: t("bans.banned", { ip: ips.join(", ") }) });
       this.form = { ips: "", reason: "", duration: "permanent" };
+      const flagged = created.filter(needsAttention);
+      if (flagged.length) {
+        await this.warnUnenforced(flagged);
+      } else {
+        this.ctx.toast({ message: t("bans.banned", { ip: ips.join(", ") }) });
+      }
     } catch (err) {
       this.formError = errorMessage(err, t);
     } finally {
       this.busy = false;
+    }
+  }
+
+  /** Tell the admin a ban they just made is not (fully) applied; offer to drop it. */
+  private async warnUnenforced(bans: Ban[]): Promise<void> {
+    const { t } = this.ctx;
+    const lines = bans.map(
+      (ban) => `${ban.ip}: ${describeEnforcement(ban.enforcement, t).detail}`,
+    );
+    const fullyOff = bans.filter((ban) => ban.enforcement && !ban.enforcement.enforced);
+    if (!fullyOff.length) {
+      // Ranges are still enforced; just say which addresses are exempt.
+      this.ctx.toast({ message: `${t("bans.partial_title")}. ${lines.join(" ")}`, duration: 15000 });
+      return;
+    }
+    const remove = await this.ctx.confirm({
+      title: t("bans.unenforced_title", { count: fullyOff.length }),
+      body: `${lines.join(" ")} ${t("bans.unenforced_body")}`,
+      confirm: t("bans.unenforced_remove"),
+      cancel: t("bans.unenforced_keep"),
+      destructive: true,
+    });
+    if (!remove) return;
+    try {
+      await this.ctx.api.unban(fullyOff.map((ban) => ban.ip));
+    } catch (err) {
+      this.ctx.error(err);
     }
   }
 
@@ -142,6 +176,15 @@ export class BgBans extends LitElement {
         ${label}${active ? (this.query.dir === "asc" ? " ▲" : " ▼") : ""}
       </button>
     </th>`;
+  }
+
+  private enforcementChip(ban: Ban) {
+    const info = describeEnforcement(ban.enforcement, this.ctx.t);
+    if (info.level === "ok") return nothing;
+    return html`<div class="enforcement">
+      <span class="chip ${info.level === "off" ? "bad" : "warn"}">${info.label}</span>
+      <span class="why">${info.detail}</span>
+    </div>`;
   }
 
   private expiry(ban: Ban) {
@@ -326,6 +369,7 @@ export class BgBans extends LitElement {
                         >
                           ${ban.ip}
                         </button>
+                        ${this.enforcementChip(ban)}
                       </td>
                       <td class="hide-narrow" title=${ban.city ?? ""}>
                         ${ban.country ? `${flag(ban.country)} ${ban.country}` : ""}
@@ -379,6 +423,16 @@ export class BgBans extends LitElement {
         min-height: 0;
         border-radius: 0;
         text-align: start;
+      }
+      .enforcement {
+        margin-top: 4px;
+        font-size: 0.8rem;
+        color: var(--secondary-text-color);
+        max-width: 360px;
+      }
+      .enforcement .why {
+        display: block;
+        margin-top: 2px;
       }
       .reason {
         max-width: 240px;

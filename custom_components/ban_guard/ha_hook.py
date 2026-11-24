@@ -14,8 +14,11 @@ Ban Guard needs two things from Home Assistant's HTTP ban machinery:
    `process_success_login(request)`, imported by name into
    `homeassistant.components.auth.login_flow`. We wrap that one reference:
    HA's original always runs first, then Ban Guard is told about the login.
-   Websocket re-authentication (every open tab) keeps calling the original
-   directly and is not logged.
+   Websocket re-authentication (every open tab) is not logged as a login.
+4. To cut open sessions when an address is banned. The websocket API calls
+   `process_success_login(self._request)` once a session authenticates. We
+   wrap that reference too and remember the session's transport, so a ban can
+   close it at once instead of waiting for the client to reconnect.
 
 Every wrapper catches every exception from Ban Guard and falls back to HA's
 own behaviour, so a bug here can never block a request, a login or crash HA.
@@ -74,6 +77,9 @@ class Hooks(Protocol):
     def hook_login_success(self, addr: IPAddress, user_name: str | None) -> None:
         """Report a successful login through the auth login flow."""
 
+    def hook_session_opened(self, request: Any) -> None:
+        """Report an authenticated websocket session (its request)."""
+
     def hook_error(self, err: BaseException) -> None:
         """Report an unexpected exception inside a hook."""
 
@@ -90,6 +96,7 @@ class Targets:
     bans_path: str
     attr_banned_at: str
     login_flow: Any = None  # module whose process_success_login we wrap, if usable
+    ws_auth: Any = None  # websocket auth module, for tracking open sessions
 
 
 class BanLookup(dict[Any, Any]):
@@ -182,24 +189,63 @@ def _caller_user_name(frame: Any) -> str | None:
         del caller
 
 
-def make_success_wrapper(original: Callable[[Any], None], hooks: Hooks) -> Callable[[Any], None]:
-    """Wrap HA's process_success_login so Ban Guard also sees the login."""
+def _wrap(
+    original: Callable[[Any], None],
+    hooks: Hooks,
+    report: Callable[[Any, Any], None],
+) -> Callable[[Any], None]:
+    """Run HA's original first, then report to Ban Guard; never raise."""
 
     @functools.wraps(original)
     def process_success_login(request: Any) -> None:
         original(request)
         frame = inspect.currentframe()
         try:
-            remote = getattr(request, "remote", None)
-            if remote:
-                hooks.hook_login_success(ip_address(remote), _caller_user_name(frame))
-        except Exception as err:  # noqa: BLE001 - must never break a login
+            report(request, frame)
+        except Exception as err:  # noqa: BLE001 - must never break a login or session
             _safe_report(hooks, err)
         finally:
             del frame
 
     process_success_login.__ban_guard_original__ = original  # type: ignore[attr-defined]
     return process_success_login
+
+
+def make_success_wrapper(original: Callable[[Any], None], hooks: Hooks) -> Callable[[Any], None]:
+    """Wrap the login flow's process_success_login so Ban Guard sees the login."""
+
+    def report(request: Any, frame: Any) -> None:
+        remote = getattr(request, "remote", None)
+        if remote:
+            hooks.hook_login_success(ip_address(remote), _caller_user_name(frame))
+
+    return _wrap(original, hooks, report)
+
+
+def make_session_wrapper(original: Callable[[Any], None], hooks: Hooks) -> Callable[[Any], None]:
+    """Wrap the websocket auth's process_success_login to track open sessions."""
+
+    def report(request: Any, _frame: Any) -> None:
+        hooks.hook_session_opened(request)
+
+    return _wrap(original, hooks, report)
+
+
+def _toggle_wrapper(
+    module: Any,
+    enabled: bool,
+    factory: Callable[[Callable[[Any], None], Hooks], Callable[[Any], None]],
+    hooks: Hooks,
+) -> None:
+    """Install or remove a process_success_login wrapper on one module."""
+    if module is None:
+        return
+    current = module.process_success_login
+    original = getattr(current, "__ban_guard_original__", None)
+    if enabled and original is None:
+        module.process_success_login = factory(current, hooks)
+    elif not enabled and original is not None:
+        module.process_success_login = original
 
 
 def _login_flow_module() -> Any:
@@ -213,6 +259,19 @@ def _login_flow_module() -> Any:
     if not _source_contains(login_flow, "process_success_login(request)"):
         return None
     return login_flow
+
+
+def _ws_auth_module() -> Any:
+    """The websocket auth phase, which calls process_success_login per session."""
+    try:
+        from homeassistant.components.websocket_api import auth as ws_auth  # noqa: PLC0415
+    except ImportError:
+        return None
+    if not callable(getattr(ws_auth, "process_success_login", None)):
+        return None
+    if not _source_contains(ws_auth, "process_success_login(self._request)"):
+        return None
+    return ws_auth
 
 
 _COUNTER_INCREMENT = re.compile(r"\[KEY_FAILED_LOGIN_ATTEMPTS\]\[\s*\w+\s*\]\s*\+=\s*1")
@@ -279,6 +338,7 @@ def check_compatibility(hass: HomeAssistant) -> Targets:
         bans_path=str(path),
         attr_banned_at=ha_ban.ATTR_BANNED_AT,
         login_flow=_login_flow_module(),
+        ws_auth=_ws_auth_module(),
     )
 
 
@@ -310,16 +370,17 @@ class Hook:
         return self.targets.login_flow is not None
 
     def set_login_logging(self, enabled: bool) -> None:
-        """Install or remove the process_success_login wrapper."""
-        module = self.targets.login_flow
-        if module is None:
-            return
-        current = module.process_success_login
-        original = getattr(current, "__ban_guard_original__", None)
-        if enabled and original is None:
-            module.process_success_login = make_success_wrapper(current, self._hooks)
-        elif not enabled and original is not None:
-            module.process_success_login = original
+        """Install or remove the login flow wrapper."""
+        _toggle_wrapper(self.targets.login_flow, enabled, make_success_wrapper, self._hooks)
+
+    @property
+    def session_tracking_available(self) -> bool:
+        """True if open websocket sessions can be tracked on this HA version."""
+        return self.targets.ws_auth is not None
+
+    def set_session_tracking(self, enabled: bool) -> None:
+        """Install or remove the websocket session wrapper."""
+        _toggle_wrapper(self.targets.ws_auth, enabled, make_session_wrapper, self._hooks)
 
     def install(self) -> None:
         """Install (or re-install) the lookup and counter wrappers."""
@@ -357,6 +418,7 @@ class Hook:
         try:
             self.delegate_threshold(False)
             self.set_login_logging(False)
+            self.set_session_tracking(False)
             manager = self.targets.manager
             if isinstance(manager.ip_bans_lookup, BanLookup):
                 manager.ip_bans_lookup = dict(manager.ip_bans_lookup.items())

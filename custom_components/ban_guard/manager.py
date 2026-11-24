@@ -7,6 +7,7 @@ from collections import deque
 from collections.abc import Callable, Iterable
 import contextlib
 from datetime import datetime, timedelta
+from ipaddress import ip_address
 import logging
 import time
 from typing import Any
@@ -114,6 +115,7 @@ MAINTENANCE_INTERVAL = timedelta(minutes=5)
 GEOIP_CHECK_INTERVAL = timedelta(days=1)
 HOOK_ERROR_LIMIT = 20
 HOOK_ERROR_WINDOW = 60.0
+MAX_TRACKED_SESSIONS = 5000
 REVERT_DELAY = 2.0
 EXPORT_VERSION = 1
 EXPORTABLE_SETTINGS_EXCLUDE = {CONF_NPM_SECRET, "npm_password"}
@@ -169,6 +171,8 @@ class BanGuardManager:
         self._blocked_logged: dict[IPAddress, float] = {}
         self._hook_errors: deque[float] = deque(maxlen=HOOK_ERROR_LIMIT)
         self._unsubs: list[CALLBACK_TYPE] = []
+        # Open websocket sessions: id(transport) -> (address, transport).
+        self._sessions: dict[int, tuple[IPAddress, Any]] = {}
         self._yaml_lock = asyncio.Lock()
         self.hook: Hook | None = None
         self.hook_status = "not_started"
@@ -293,6 +297,7 @@ class BanGuardManager:
         self.hook.install()
         self.hook.delegate_threshold(self.protection_enabled)
         self.hook.set_login_logging(bool(self.options[CONF_LOG_LOGINS]))
+        self.hook.set_session_tracking(True)
         self.hook_status = "active"
 
     async def async_unload(self) -> None:
@@ -304,6 +309,7 @@ class BanGuardManager:
             self.hook.uninstall()
             self.hook = None
         self.hook_status = "unloaded"
+        self._sessions.clear()
         await self.activity.async_save_now()
         await self._async_save()
 
@@ -590,6 +596,47 @@ class BanGuardManager:
         self._failures.pop(addr, None)
         self.activity.add(ACT_LOGIN, str(addr), path=path, user_agent=agent, user=user_name)
 
+    def hook_session_opened(self, request: Any) -> None:
+        """A websocket session authenticated; remember it so a ban can close it."""
+        remote = getattr(request, "remote", None)
+        transport = getattr(request, "transport", None)
+        if not remote or transport is None:
+            return
+        self._prune_sessions()
+        if len(self._sessions) >= MAX_TRACKED_SESSIONS:
+            return
+        addr = normalize_address(ip_address(remote))
+        self._sessions[id(transport)] = (addr, transport)
+
+    def _prune_sessions(self) -> None:
+        for key, (_addr, transport) in list(self._sessions.items()):
+            if transport.is_closing():
+                del self._sessions[key]
+
+    def _close_sessions(self, networks: Iterable[IPNetwork]) -> int:
+        """Close open sessions from addresses that are now banned and enforced."""
+        nets = list(networks)
+        if not nets or not self.hook_active_flag:
+            return 0
+        closed: dict[str, int] = {}
+        for key, (addr, transport) in list(self._sessions.items()):
+            if transport.is_closing():
+                del self._sessions[key]
+                continue
+            if not any(addr.version == n.version and addr in n for n in nets):
+                continue
+            if self.is_allowlisted(addr) or self.guard.is_protected(addr):
+                continue
+            try:
+                transport.close()
+            except Exception:
+                _LOGGER.debug("Closing session from %s failed", addr, exc_info=True)
+            del self._sessions[key]
+            closed[str(addr)] = closed.get(str(addr), 0) + 1
+        for ip, count in closed.items():
+            self.activity.add(ACT_BLOCKED, ip, detail=f"session_closed:{count}")
+        return sum(closed.values())
+
     def _prune_failures(self, now: datetime) -> None:
         cutoff = now - timedelta(days=1)
         for key in [k for k, v in self._failures.items() if not v or v[-1] < cutoff]:
@@ -732,6 +779,8 @@ class BanGuardManager:
             raise BanGuardError("invalid_ip", ip=target) from err
         if source not in SOURCES:
             raise BanGuardError("invalid_source", source=source)
+        # Pick up addresses an administrator started using since the last refresh.
+        await self.guard.async_refresh_admins()
         self._check_lockout(network, requester)
         if is_single(network) and network.network_address in self._allow_set:
             raise BanGuardError("allowlisted", ip=network_key(network))
@@ -789,6 +838,7 @@ class BanGuardManager:
             "Ban Guard: address banned",
         )
         self._changed()
+        self._close_sessions([ban.network])
         self._schedule_npm_sync()
 
     async def async_unban(
@@ -831,6 +881,7 @@ class BanGuardManager:
         await self._async_write_yaml(add=restored)
         await self._async_save()
         self._changed()
+        self._close_sessions(b.network for b in restored if not b.expired(now))
         self._schedule_npm_sync()
 
     async def _async_purge_expired(self) -> list[Ban]:
@@ -898,6 +949,7 @@ class BanGuardManager:
             await self._async_reconcile_yaml()
         self.activity.purge()
         self._prune_failures(dt_util.utcnow())
+        self._prune_sessions()
 
     async def _async_allowlist_tick(self, _now: datetime) -> None:
         await self._async_refresh_allowlist()
@@ -1027,6 +1079,44 @@ class BanGuardManager:
         except InvalidTargetError:
             return None
 
+    def enforcement(self, ban: Ban) -> dict[str, Any]:
+        """Whether a ban is applied to requests, and if not, why.
+
+        Returns {"enforced": bool, "partial": bool, "reason": key | None,
+        "protected": network | None, "exempt": [networks]}. `reason` is a
+        translation key; `partial` means a range is enforced except for the
+        protected or allowlisted addresses listed in `exempt`.
+        """
+        result: dict[str, Any] = {
+            "enforced": True,
+            "partial": False,
+            "reason": None,
+            "protected": None,
+            "exempt": [],
+        }
+        if not self.hook_active_flag:
+            result.update(enforced=False, reason=f"hook_{self.hook_status}")
+            return result
+        if ban.single:
+            addr = ban.network.network_address
+            if self.is_allowlisted(addr):
+                result.update(enforced=False, reason="allowlisted")
+            elif (protection := self.guard.protection_for(addr)) is not None:
+                result.update(
+                    enforced=False,
+                    reason=f"protected_{protection.reason}",
+                    protected=str(protection.network),
+                )
+            return result
+        exempt = {str(p.network) for p in self.guard.conflicts(ban.network)}
+        for entry in self.allow.values():
+            for net in entry.networks():
+                if net.version == ban.network.version and ban.network.overlaps(net):
+                    exempt.add(network_key(net))
+        if exempt:
+            result.update(partial=True, reason="partial", exempt=sorted(exempt))
+        return result
+
     def ban_view(self, ban: Ban) -> dict[str, Any]:
         """Serialise a ban for the UI."""
         data = ban.as_dict()
@@ -1035,6 +1125,7 @@ class BanGuardManager:
         data["country"] = geo["country"] if geo else None
         data["city"] = geo["city"] if geo else None
         data["in_ip_bans_yaml"] = self._in_yaml(ban)
+        data["enforcement"] = self.enforcement(ban)
         return data
 
     def status(self) -> dict[str, Any]:
@@ -1053,6 +1144,11 @@ class BanGuardManager:
                 self.hook is not None
                 and self.hook.login_logging_available
                 and self.options[CONF_LOG_LOGINS]
+            ),
+            "session_closing": bool(
+                self.hook_active_flag
+                and self.hook is not None
+                and self.hook.session_tracking_available
             ),
             "rdns": bool(self.options[CONF_RDNS_ENABLED]),
             "doh": bool(self.options[CONF_DOH_ENABLED]),
@@ -1221,6 +1317,7 @@ class BanGuardManager:
         await self._async_write_yaml(add=added)
         await self._async_save()
         self._changed()
+        self._close_sessions(b.network for b in added)
         self._schedule_npm_sync()
         if include_settings and preview["settings"]:
             options = dict(self.entry.options)

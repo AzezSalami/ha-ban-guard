@@ -193,3 +193,51 @@ describe("backup parsing", () => {
     expect(result.ok).toBe(true);
   });
 });
+
+import { describeEnforcement, needsAttention } from "../src/logic/enforcement";
+
+describe("enforcement", () => {
+  const t = translator("en");
+  const base = { enforced: true, partial: false, reason: null, protected: null, exempt: [] };
+
+  it("is silent when fully enforced or unknown", () => {
+    expect(describeEnforcement(base, t)).toEqual({ level: "ok", label: "", detail: "" });
+    expect(describeEnforcement(undefined, t).level).toBe("ok");
+    expect(needsAttention(ban({}))).toBe(false);
+    expect(needsAttention(ban({ enforcement: base }))).toBe(false);
+  });
+
+  it("explains an admin-protected address", () => {
+    const info = describeEnforcement(
+      { ...base, enforced: false, reason: "protected_admin", protected: "198.51.100.9/32" },
+      t,
+    );
+    expect(info.level).toBe("off");
+    expect(info.label).toBe("Not enforced");
+    expect(info.detail).toContain("administrator used 198.51.100.9/32");
+  });
+
+  it("explains partial ranges, inactive hooks and unknown reasons", () => {
+    const partial = describeEnforcement(
+      { ...base, partial: true, reason: "partial", exempt: ["10.0.0.5", "10.0.0.6"] },
+      t,
+    );
+    expect(partial).toMatchObject({ level: "partial", label: "Partly exempt" });
+    expect(partial.detail).toContain("10.0.0.5, 10.0.0.6");
+    expect(
+      describeEnforcement({ ...base, enforced: false, reason: "hook_ip_ban_disabled" }, t).detail,
+    ).toContain("ip_ban_disabled");
+    expect(describeEnforcement({ ...base, enforced: false, reason: "new_thing" }, t).detail).toBe(
+      "Ban Guard cannot apply this ban right now.",
+    );
+    expect(describeEnforcement({ ...base, enforced: false }, t).level).toBe("off");
+  });
+
+  it("filters bans that need attention", () => {
+    const off = ban({ ip: "1.1.1.1", enforcement: { ...base, enforced: false, reason: "allowlisted" } });
+    const partial = ban({ ip: "10.0.0.0/8", enforcement: { ...base, partial: true, reason: "partial" } });
+    const fine = ban({ ip: "2.2.2.2", enforcement: base });
+    const rows = queryBans([off, partial, fine], { ...DEFAULT_QUERY, kind: "unenforced" });
+    expect(rows.map((b) => b.ip).sort()).toEqual(["1.1.1.1", "10.0.0.0/8"]);
+  });
+});

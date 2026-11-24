@@ -10,7 +10,9 @@ export interface Ctx {
   api: Api;
   t: Translate;
   language: string;
-  confirm(options: Omit<ConfirmOptions, "confirm" | "cancel"> & { confirm?: string }): Promise<boolean>;
+  confirm(
+    options: Omit<ConfirmOptions, "confirm" | "cancel"> & { confirm?: string; cancel?: string },
+  ): Promise<boolean>;
   toast(options: ToastOptions): void;
   error(err: unknown): void;
   openDetails(ip: string): void;

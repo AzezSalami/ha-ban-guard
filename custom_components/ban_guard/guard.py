@@ -119,14 +119,25 @@ class LockoutGuard:
             if p.network.version == network.version and network.overlaps(p.network)
         ]
 
+    def protection_for(self, addr: IPAddress) -> Protected | None:
+        """Return the most specific protection covering a single address."""
+        addr = normalize_address(addr)
+        best: Protected | None = None
+        for p in self.protected():
+            if (
+                p.network.version == addr.version
+                and addr in p.network
+                and (best is None or p.network.prefixlen > best.network.prefixlen)
+            ):
+                best = p
+        return best
+
     def is_protected(self, addr: IPAddress, extra: Iterable[IPAddress] = ()) -> bool:
         """Return True if a single address is protected."""
         addr = normalize_address(addr)
         if addr in extra:
             return True
-        return any(
-            p.network.version == addr.version and addr in p.network for p in self.protected()
-        )
+        return self.protection_for(addr) is not None
 
 
 def _host(address: str, reason: str) -> Protected:

@@ -57,9 +57,9 @@
       const iso = (offsetMs) => new Date(now + offsetMs).toISOString();
       const H = 3600e3;
       const bans = [
-        { ip: "185.220.101.34", reason: "5 failed logins in 15 min", source: "automatic", created_by: null, created_at: iso(-2 * H), expires_at: iso(22 * H), offense: 2, single: true, country: "DE", city: "Frankfurt", in_ip_bans_yaml: false },
-        { ip: "45.155.205.0/24", reason: "Scanner network", source: "manual", created_by: "Alex", created_at: iso(-30 * H), expires_at: null, offense: 0, single: false, country: "NL", city: null, in_ip_bans_yaml: false },
-        { ip: "103.145.13.9", reason: "5 failed logins in 15 min", source: "automatic", created_by: null, created_at: iso(-0.4 * H), expires_at: iso(0.6 * H), offense: 1, single: true, country: "VN", city: "Hanoi", in_ip_bans_yaml: false },
+        { ip: "185.220.101.34", reason: "5 failed logins in 15 min", source: "automatic", created_by: null, created_at: iso(-2 * H), expires_at: iso(22 * H), offense: 2, single: true, country: "DE", city: "Frankfurt", in_ip_bans_yaml: false, enforcement: { enforced: true, partial: false, reason: null, protected: null, exempt: [] } },
+        { ip: "45.155.205.0/24", reason: "Scanner network", source: "manual", created_by: "Alex", created_at: iso(-30 * H), expires_at: null, offense: 0, single: false, country: "NL", city: null, in_ip_bans_yaml: false, enforcement: { enforced: true, partial: true, reason: "partial", protected: null, exempt: ["45.155.205.17"] } },
+        { ip: "103.145.13.9", reason: "5 failed logins in 15 min", source: "automatic", created_by: null, created_at: iso(-0.4 * H), expires_at: iso(0.6 * H), offense: 1, single: true, country: "VN", city: "Hanoi", in_ip_bans_yaml: false, enforcement: { enforced: false, partial: false, reason: "protected_admin", protected: "103.145.13.9/32", exempt: [] } },
         { ip: "2001:db8:dead::/48", reason: "Imported from old server", source: "imported", created_by: "Alex", created_at: iso(-200 * H), expires_at: null, offense: 0, single: false, country: null, city: null, in_ip_bans_yaml: false },
         { ip: "198.51.100.23", reason: "", source: "home_assistant", created_by: null, created_at: iso(-500 * H), expires_at: null, offense: 0, single: true, country: "US", city: "Ashburn", in_ip_bans_yaml: true },
       ];
@@ -80,7 +80,7 @@
       const status = {
         hook: "active", protection_enabled: true, ha_login_threshold: -1,
         geoip: { enabled: true, loaded: true, edition: "country", error: null },
-        login_logging: true, rdns: true, doh: false, npm: { enabled: false },
+        login_logging: true, session_closing: true, rdns: true, doh: false, npm: { enabled: false },
         country_rules: { allow: [], deny: ["KP"] }, under_attack: false,
       };
       const overview = {

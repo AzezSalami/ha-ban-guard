@@ -1,5 +1,13 @@
 // Shapes returned by the ban_guard/* websocket commands.
 
+export interface Enforcement {
+  enforced: boolean;
+  partial: boolean;
+  reason: string | null;
+  protected: string | null;
+  exempt: string[];
+}
+
 export interface Ban {
   ip: string;
   reason: string;
@@ -12,6 +20,7 @@ export interface Ban {
   country: string | null;
   city: string | null;
   in_ip_bans_yaml: boolean;
+  enforcement?: Enforcement;
 }
 
 export interface AllowEntry {
@@ -52,6 +61,7 @@ export interface Status {
   hook: string;
   protection_enabled: boolean;
   login_logging: boolean;
+  session_closing: boolean;
   ha_login_threshold: number | null;
   geoip: { enabled: boolean; loaded: boolean; edition: string; error: string | null };
   rdns: boolean;

@@ -71,6 +71,7 @@ export class BgSettings extends LitElement {
             : t("settings.off"),
         )}
         ${this.item(t("settings.logins"), onOff(s.status.login_logging))}
+        ${this.item(t("settings.sessions"), onOff(s.status.session_closing))}
         ${this.item(t("settings.notifications"), onOff(o["notify_persistent"]))}
         ${this.item(
           t("settings.logging"),

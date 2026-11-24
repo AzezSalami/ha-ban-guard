@@ -93,7 +93,13 @@
     "empty_body": "Nobody is banned right now. Ban an address manually, or let failed-login protection do it for you.",
     "no_match": "No bans match these filters.",
     "sort_by": "Sort by {column}",
-    "count": "{shown} of {total}"
+    "count": "{shown} of {total}",
+    "kind_unenforced": "Not fully enforced",
+    "unenforced_title": "Ban saved, but not enforced",
+    "unenforced_body": "Requests from this address are still allowed. Remove the ban, or keep it so it applies once the reason goes away?",
+    "unenforced_remove": "Remove ban",
+    "unenforced_keep": "Keep ban",
+    "partial_title": "Ban saved, with exceptions"
   },
   "drawer": {
     "title": "Address details",
@@ -105,7 +111,8 @@
     "history": "History",
     "no_history": "No recorded activity for this address.",
     "rdns_off": "Reverse DNS is off",
-    "allowlist_it": "Unban and allowlist"
+    "allowlist_it": "Unban and allowlist",
+    "enforcement": "Enforcement"
   },
   "allowlist": {
     "add": "Add entry",
@@ -183,7 +190,8 @@
     "geoip_loaded": "Loaded ({edition})",
     "geoip_loading": "Enabled, not loaded yet",
     "geoip_error": "Error: {error}",
-    "logins": "Successful-login log"
+    "logins": "Successful-login log",
+    "sessions": "Close open sessions on ban"
   },
   "backup": {
     "export_title": "Export",
@@ -227,5 +235,22 @@
     "not_loaded": "Ban Guard is not loaded.",
     "unauthorized": "Only administrators can use Ban Guard.",
     "invalid": "Invalid entry: {detail}"
+  },
+  "enforcement": {
+    "not_enforced": "Not enforced",
+    "partial": "Partly exempt",
+    "reasons": {
+      "allowlisted": "The address is on the allowlist.",
+      "protected_admin": "An administrator used {protected} in the last day, so it is never blocked.",
+      "protected_host": "{protected} is this Home Assistant host's own address.",
+      "protected_loopback": "{protected} is a loopback address.",
+      "protected_unspecified": "{protected} can never be blocked.",
+      "protected_supervisor": "{protected} is the Supervisor network.",
+      "protected_proxy": "{protected} is a trusted proxy.",
+      "protected_current": "{protected} is your current address.",
+      "partial": "Not applied to {exempt} (protected or allowlisted).",
+      "hook": "Request protection is not active ({status}).",
+      "unknown": "Ban Guard cannot apply this ban right now."
+    }
   }
 }

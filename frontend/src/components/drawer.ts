@@ -1,6 +1,7 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import type { Ctx } from "../context";
+import { describeEnforcement } from "../logic/enforcement";
 import { flag, formatDateTime } from "../logic/format";
 import { shared } from "../styles";
 import type { History } from "../types";
@@ -111,6 +112,13 @@ export class BgDrawer extends LitElement {
                       : t("common.permanent")}`
                   : t("common.none")}
               </dd>
+              ${d.ban && describeEnforcement(d.ban.enforcement, t).level !== "ok"
+                ? html`<dt>${t("drawer.enforcement")}</dt>
+                    <dd class="warn-text">
+                      ${describeEnforcement(d.ban.enforcement, t).label}:
+                      ${describeEnforcement(d.ban.enforcement, t).detail}
+                    </dd>`
+                : nothing}
             </dl>
             ${d.ban
               ? html`<div class="row">
@@ -170,6 +178,9 @@ export class BgDrawer extends LitElement {
       }
       .history {
         margin-top: 24px;
+      }
+      .warn-text {
+        color: var(--warning-color);
       }
       .timeline {
         list-style: none;

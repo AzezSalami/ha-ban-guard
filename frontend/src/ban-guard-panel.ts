@@ -80,7 +80,11 @@ export class BanGuardPanel extends LitElement {
       t,
       language: this.language,
       confirm: (o) =>
-        this.confirmEl.ask({ ...o, confirm: o.confirm ?? t("common.confirm"), cancel: t("common.cancel") }),
+        this.confirmEl.ask({
+          ...o,
+          confirm: o.confirm ?? t("common.confirm"),
+          cancel: o.cancel ?? t("common.cancel"),
+        }),
       toast: (o) => this.toastEl.show(o),
       error: (err) => this.toastEl.show({ message: errorMessage(err, t) }),
       openDetails: (ip) => (this.details = ip),

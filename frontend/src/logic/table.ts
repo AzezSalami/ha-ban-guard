@@ -1,9 +1,10 @@
 // Search, filter and sort for the bans table (unit tested).
 import type { Ban } from "../types";
+import { needsAttention } from "./enforcement";
 
 export type BanSortKey = "ip" | "created_at" | "expires_at" | "source" | "country";
 export type SortDir = "asc" | "desc";
-export type BanKind = "all" | "permanent" | "temporary" | "network";
+export type BanKind = "all" | "permanent" | "temporary" | "network" | "unenforced";
 
 export interface BanQuery {
   search: string;
@@ -39,6 +40,8 @@ function kindOf(ban: Ban, kind: BanKind): boolean {
       return ban.expires_at === null;
     case "temporary":
       return ban.expires_at !== null;
+    case "unenforced":
+      return needsAttention(ban);
     case "network":
       return !ban.single;
     default:

@@ -289,7 +289,7 @@ var Te = (e, t) => {
 						index: a,
 						name: r[2],
 						strings: n,
-						ctor: r[1] === "." ? De : r[1] === "?" ? Oe : r[1] === "@" ? ke : j
+						ctor: r[1] === "." ? Oe : r[1] === "?" ? ke : r[1] === "@" ? Ae : A
 					}), i.removeAttribute(e);
 				} else e.startsWith(_) && (c.push({
 					type: 6,
@@ -349,7 +349,7 @@ var Ee = class {
 		for (; s !== void 0;) {
 			if (a === s.index) {
 				let t;
-				s.type === 2 ? t = new A(i, i.nextSibling, this, e) : s.type === 1 ? t = new s.ctor(i, s.name, s.strings, this, e) : s.type === 6 && (t = new Ae(i, this, e)), this._$AV.push(t), s = n[++o];
+				s.type === 2 ? t = new De(i, i.nextSibling, this, e) : s.type === 1 ? t = new s.ctor(i, s.name, s.strings, this, e) : s.type === 6 && (t = new je(i, this, e)), this._$AV.push(t), s = n[++o];
 			}
 			a !== s?.index && (i = D.nextNode(), a++);
 		}
@@ -359,7 +359,7 @@ var Ee = class {
 		let t = 0;
 		for (let n of this._$AV) n !== void 0 && (n.strings === void 0 ? n._$AI(e[t]) : (n._$AI(e, n, t), t += n.strings.length - 2)), t++;
 	}
-}, A = class e {
+}, De = class e {
 	get _$AU() {
 		return this._$AM?._$AU ?? this._$Cv;
 	}
@@ -415,7 +415,7 @@ var Ee = class {
 	setConnected(e) {
 		this._$AM === void 0 && (this._$Cv = e, this._$AP?.(e));
 	}
-}, j = class {
+}, A = class {
 	get tagName() {
 		return this.element.tagName;
 	}
@@ -437,21 +437,21 @@ var Ee = class {
 	j(e) {
 		e === E ? this.element.removeAttribute(this.name) : this.element.setAttribute(this.name, e ?? "");
 	}
-}, De = class extends j {
+}, Oe = class extends A {
 	constructor() {
 		super(...arguments), this.type = 3;
 	}
 	j(e) {
 		this.element[this.name] = e === E ? void 0 : e;
 	}
-}, Oe = class extends j {
+}, ke = class extends A {
 	constructor() {
 		super(...arguments), this.type = 4;
 	}
 	j(e) {
 		this.element.toggleAttribute(this.name, !!e && e !== E);
 	}
-}, ke = class extends j {
+}, Ae = class extends A {
 	constructor(e, t, n, r, i) {
 		super(e, t, n, r, i), this.type = 5;
 	}
@@ -463,7 +463,7 @@ var Ee = class {
 	handleEvent(e) {
 		typeof this._$AH == "function" ? this._$AH.call(this.options?.host ?? this.element, e) : this._$AH.handleEvent(e);
 	}
-}, Ae = class {
+}, je = class {
 	constructor(e, t, n) {
 		this.element = e, this.type = 6, this._$AN = void 0, this._$AM = t, this.options = n;
 	}
@@ -473,16 +473,16 @@ var Ee = class {
 	_$AI(e) {
 		k(this, e);
 	}
-}, je = ce.litHtmlPolyfillSupport;
-je?.(O, A), (ce.litHtmlVersions ??= []).push("3.3.3");
-var Me = (e, t, n) => {
+}, Me = ce.litHtmlPolyfillSupport;
+Me?.(O, De), (ce.litHtmlVersions ??= []).push("3.3.3");
+var Ne = (e, t, n) => {
 	let r = n?.renderBefore ?? t, i = r._$litPart$;
 	if (i === void 0) {
 		let e = n?.renderBefore ?? null;
-		r._$litPart$ = i = new A(t.insertBefore(y(), e), e, void 0, n ?? {});
+		r._$litPart$ = i = new De(t.insertBefore(y(), e), e, void 0, n ?? {});
 	}
 	return i._$AI(e), i;
-}, Ne = globalThis, M = class extends h {
+}, Pe = globalThis, j = class extends h {
 	constructor() {
 		super(...arguments), this.renderOptions = { host: this }, this._$Do = void 0;
 	}
@@ -492,7 +492,7 @@ var Me = (e, t, n) => {
 	}
 	update(e) {
 		let t = this.render();
-		this.hasUpdated || (this.renderOptions.isConnected = this.isConnected), super.update(e), this._$Do = Me(t, this.renderRoot, this.renderOptions);
+		this.hasUpdated || (this.renderOptions.isConnected = this.isConnected), super.update(e), this._$Do = Ne(t, this.renderRoot, this.renderOptions);
 	}
 	connectedCallback() {
 		super.connectedCallback(), this._$Do?.setConnected(!0);
@@ -504,21 +504,21 @@ var Me = (e, t, n) => {
 		return T;
 	}
 };
-M._$litElement$ = !0, M.finalized = !0, Ne.litElementHydrateSupport?.({ LitElement: M });
-var Pe = Ne.litElementPolyfillSupport;
-Pe?.({ LitElement: M }), (Ne.litElementVersions ??= []).push("4.2.2");
+j._$litElement$ = !0, j.finalized = !0, Pe.litElementHydrateSupport?.({ LitElement: j });
+var Fe = Pe.litElementPolyfillSupport;
+Fe?.({ LitElement: j }), (Pe.litElementVersions ??= []).push("4.2.2");
 // node_modules/@lit/reactive-element/decorators/custom-element.js
-var N = (e) => (t, n) => {
+var M = (e) => (t, n) => {
 	n === void 0 ? customElements.define(e, t) : n.addInitializer(() => {
 		customElements.define(e, t);
 	});
-}, Fe = {
+}, Ie = {
 	attribute: !0,
 	type: String,
 	converter: p,
 	reflect: !1,
 	hasChanged: m
-}, Ie = (e = Fe, t, n) => {
+}, Le = (e = Ie, t, n) => {
 	let { kind: r, metadata: i } = n, a = globalThis.litPropertyMetadata.get(i);
 	if (a === void 0 && globalThis.litPropertyMetadata.set(i, a = /* @__PURE__ */ new Map()), r === "setter" && ((e = Object.create(e)).wrapped = !0), a.set(n.name, e), r === "accessor") {
 		let { name: r } = n;
@@ -541,24 +541,24 @@ var N = (e) => (t, n) => {
 	}
 	throw Error("Unsupported decorator location: " + r);
 };
-function P(e) {
-	return (t, n) => typeof n == "object" ? Ie(e, t, n) : ((e, t, n) => {
+function N(e) {
+	return (t, n) => typeof n == "object" ? Le(e, t, n) : ((e, t, n) => {
 		let r = t.hasOwnProperty(n);
 		return t.constructor.createProperty(n, e), r ? Object.getOwnPropertyDescriptor(t, n) : void 0;
 	})(e, t, n);
 }
 // node_modules/@lit/reactive-element/decorators/state.js
-function F(e) {
-	return P({
+function P(e) {
+	return N({
 		...e,
 		state: !0,
 		attribute: !1
 	});
 }
 // node_modules/@lit/reactive-element/decorators/base.js
-var Le = (e, t, n) => (n.configurable = !0, n.enumerable = !0, Reflect.decorate && typeof t != "object" && Object.defineProperty(e, t, n), n);
+var Re = (e, t, n) => (n.configurable = !0, n.enumerable = !0, Reflect.decorate && typeof t != "object" && Object.defineProperty(e, t, n), n);
 // node_modules/@lit/reactive-element/decorators/query.js
-function I(e, t) {
+function F(e, t) {
 	return (n, r, i) => {
 		let a = (t) => t.renderRoot?.querySelector(e) ?? null;
 		if (t) {
@@ -573,18 +573,18 @@ function I(e, t) {
 					}
 				};
 			})();
-			return Le(n, r, { get() {
+			return Re(n, r, { get() {
 				let n = e.call(this);
 				return n === void 0 && (n = a(this), (n !== null || this.hasUpdated) && t.call(this, n)), n;
 			} });
 		}
-		return Le(n, r, { get() {
+		return Re(n, r, { get() {
 			return a(this);
 		} });
 	};
 }
 // src/api.ts
-var Re = class {
+var ze = class {
 	constructor(e) {
 		this.hass = e;
 	}
@@ -654,7 +654,7 @@ var Re = class {
 		return this.call("npm_sync");
 	}
 };
-function L(e, t) {
+function I(e, t) {
 	let n = e, r = n?.translation_key ?? n?.code;
 	if (r) {
 		let e = t(`errors.${r}`, n?.translation_placeholders ?? {});
@@ -663,7 +663,7 @@ function L(e, t) {
 	return t("common.error", { message: n?.message ?? (e instanceof Error ? e.message : String(e)) });
 }
 // src/styles.ts
-var R = o`
+var L = o`
   :host {
     color: var(--primary-text-color);
     font-family: var(--ha-font-family-body, var(--paper-font-body1_-_font-family, inherit));
@@ -870,14 +870,14 @@ var R = o`
   }
 `;
 // \0@oxc-project+runtime@0.156.0/helpers/esm/decorate.js
-function z(e, t, n, r) {
+function R(e, t, n, r) {
 	var i = arguments.length, a = i < 3 ? t : r === null ? r = Object.getOwnPropertyDescriptor(t, n) : r, o;
 	if (typeof Reflect == "object" && typeof Reflect.decorate == "function") a = Reflect.decorate(e, t, n, r);
 	else for (var s = e.length - 1; s >= 0; s--) (o = e[s]) && (a = (i < 3 ? o(a) : i > 3 ? o(t, n, a) : o(t, n)) || a);
 	return i > 3 && a && Object.defineProperty(t, n, a), a;
 }
 // src/components/dialog.ts
-var B = class extends M {
+var z = class extends j {
 	constructor(...e) {
 		super(...e), this.heading = "", this.open = !1, this.opener = null;
 	}
@@ -895,7 +895,7 @@ var B = class extends M {
     </dialog>`;
 	}
 	static {
-		this.styles = [R, o`
+		this.styles = [L, o`
       dialog {
         border: none;
         border-radius: var(--ha-dialog-border-radius, 24px);
@@ -919,8 +919,8 @@ var B = class extends M {
     `];
 	}
 };
-z([P()], B.prototype, "heading", void 0), z([P({ type: Boolean })], B.prototype, "open", void 0), z([I("dialog")], B.prototype, "dialog", void 0), B = z([N("bg-dialog")], B);
-var ze = class extends M {
+R([N()], z.prototype, "heading", void 0), R([N({ type: Boolean })], z.prototype, "open", void 0), R([F("dialog")], z.prototype, "dialog", void 0), z = R([M("bg-dialog")], z);
+var Be = class extends j {
 	constructor(...e) {
 		super(...e), this.options = null, this.resolve = null;
 	}
@@ -951,17 +951,46 @@ var ze = class extends M {
     </bg-dialog>`;
 	}
 	static {
-		this.styles = [R];
+		this.styles = [L];
 	}
 };
-z([P({ attribute: !1 })], ze.prototype, "options", void 0), ze = z([N("bg-confirm")], ze);
+R([N({ attribute: !1 })], Be.prototype, "options", void 0), Be = R([M("bg-confirm")], Be);
+// src/logic/enforcement.ts
+function B(e, t) {
+	if (!e || e.enforced && !e.partial) return {
+		level: "ok",
+		label: "",
+		detail: ""
+	};
+	let n = e.reason ?? "unknown", r;
+	if (n.startsWith("hook_")) r = t("enforcement.reasons.hook", { status: n.slice(5) });
+	else {
+		let i = `enforcement.reasons.${n}`, a = t(i, {
+			protected: e.protected ?? "",
+			exempt: e.exempt.join(", ")
+		});
+		r = a === i ? t("enforcement.reasons.unknown") : a;
+	}
+	return e.enforced ? {
+		level: "partial",
+		label: t("enforcement.partial"),
+		detail: r
+	} : {
+		level: "off",
+		label: t("enforcement.not_enforced"),
+		detail: r
+	};
+}
+function Ve(e) {
+	return !!e.enforcement && (!e.enforcement.enforced || e.enforcement.partial);
+}
 // src/logic/format.ts
 function V(e) {
 	if (!e || !/^[A-Za-z]{2}$/.test(e)) return "";
 	let t = 127462, n = e.toUpperCase();
 	return String.fromCodePoint(t + n.charCodeAt(0) - 65, t + n.charCodeAt(1) - 65);
 }
-function Be(e, t) {
+function He(e, t) {
 	if (!e) return null;
 	let n = Date.parse(e) - t;
 	if (Number.isNaN(n)) return null;
@@ -981,7 +1010,7 @@ function Be(e, t) {
 		seconds: r % 60
 	};
 }
-function Ve(e) {
+function Ue(e) {
 	return e.days > 0 ? `${e.days}d ${e.hours}h` : e.hours > 0 ? `${e.hours}h ${String(e.minutes).padStart(2, "0")}m` : `${e.minutes}m ${String(e.seconds).padStart(2, "0")}s`;
 }
 function H(e, t) {
@@ -992,14 +1021,14 @@ function H(e, t) {
 		timeStyle: "short"
 	}).format(n);
 }
-function He(e) {
-	let t = Ue(Math.max(0, ...e));
+function We(e) {
+	let t = Ge(Math.max(0, ...e));
 	return {
 		ratios: e.map((e) => t === 0 ? 0 : e / t),
 		max: t
 	};
 }
-function Ue(e) {
+function Ge(e) {
 	if (e <= 0) return 0;
 	let t = 10 ** Math.floor(Math.log10(e));
 	for (let n of [
@@ -1011,11 +1040,11 @@ function Ue(e) {
 	]) if (e <= n * t) return n * t;
 	return 10 * t;
 }
-function We(e, t) {
+function Ke(e, t) {
 	return `${e}-${t.toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
 }
 // src/components/drawer.ts
-var U = class extends M {
+var U = class extends j {
 	constructor(...e) {
 		super(...e), this.ip = null, this.revision = 0, this.data = null;
 	}
@@ -1082,6 +1111,11 @@ var U = class extends M {
                 ${n.ban ? w`${n.ban.reason || e(`bans.source_${n.ban.source}`)} ·
                     ${n.ban.expires_at ? H(n.ban.expires_at, t) : e("common.permanent")}` : e("common.none")}
               </dd>
+              ${n.ban && B(n.ban.enforcement, e).level !== "ok" ? w`<dt>${e("drawer.enforcement")}</dt>
+                    <dd class="warn-text">
+                      ${B(n.ban.enforcement, e).label}:
+                      ${B(n.ban.enforcement, e).detail}
+                    </dd>` : E}
             </dl>
             ${n.ban ? w`<div class="row">
                   <button class="danger" @click=${() => this.unban(!1)}>
@@ -1101,7 +1135,7 @@ var U = class extends M {
     </dialog>`;
 	}
 	static {
-		this.styles = [R, o`
+		this.styles = [L, o`
       dialog {
         margin: 0 0 0 auto;
         height: 100vh;
@@ -1134,6 +1168,9 @@ var U = class extends M {
       .history {
         margin-top: 24px;
       }
+      .warn-text {
+        color: var(--warning-color);
+      }
       .timeline {
         list-style: none;
         padding: 0;
@@ -1151,9 +1188,9 @@ var U = class extends M {
     `];
 	}
 };
-z([P({ attribute: !1 })], U.prototype, "ctx", void 0), z([P()], U.prototype, "ip", void 0), z([P({ type: Number })], U.prototype, "revision", void 0), z([F()], U.prototype, "data", void 0), z([I("dialog")], U.prototype, "dialog", void 0), U = z([N("bg-drawer")], U);
+R([N({ attribute: !1 })], U.prototype, "ctx", void 0), R([N()], U.prototype, "ip", void 0), R([N({ type: Number })], U.prototype, "revision", void 0), R([P()], U.prototype, "data", void 0), R([F("dialog")], U.prototype, "dialog", void 0), U = R([M("bg-drawer")], U);
 // src/components/toast.ts
-var Ge = class extends M {
+var qe = class extends j {
 	constructor(...e) {
 		super(...e), this.current = null;
 	}
@@ -1177,7 +1214,7 @@ var Ge = class extends M {
     </div>`;
 	}
 	static {
-		this.styles = [R, o`
+		this.styles = [L, o`
       .region {
         position: fixed;
         inset-inline: 0;
@@ -1206,8 +1243,8 @@ var Ge = class extends M {
     `];
 	}
 };
-z([F()], Ge.prototype, "current", void 0), Ge = z([N("bg-toast")], Ge);
-var Ke = {
+R([P()], qe.prototype, "current", void 0), qe = R([M("bg-toast")], qe);
+var Je = {
 	title: "Ban Guard",
 	tabs: {
 		overview: "Overview",
@@ -1302,7 +1339,13 @@ var Ke = {
 		empty_body: "Nobody is banned right now. Ban an address manually, or let failed-login protection do it for you.",
 		no_match: "No bans match these filters.",
 		sort_by: "Sort by {column}",
-		count: "{shown} of {total}"
+		count: "{shown} of {total}",
+		kind_unenforced: "Not fully enforced",
+		unenforced_title: "Ban saved, but not enforced",
+		unenforced_body: "Requests from this address are still allowed. Remove the ban, or keep it so it applies once the reason goes away?",
+		unenforced_remove: "Remove ban",
+		unenforced_keep: "Keep ban",
+		partial_title: "Ban saved, with exceptions"
 	},
 	drawer: {
 		title: "Address details",
@@ -1314,7 +1357,8 @@ var Ke = {
 		history: "History",
 		no_history: "No recorded activity for this address.",
 		rdns_off: "Reverse DNS is off",
-		allowlist_it: "Unban and allowlist"
+		allowlist_it: "Unban and allowlist",
+		enforcement: "Enforcement"
 	},
 	allowlist: {
 		add: "Add entry",
@@ -1392,7 +1436,8 @@ var Ke = {
 		geoip_loaded: "Loaded ({edition})",
 		geoip_loading: "Enabled, not loaded yet",
 		geoip_error: "Error: {error}",
-		logins: "Successful-login log"
+		logins: "Successful-login log",
+		sessions: "Close open sessions on ban"
 	},
 	backup: {
 		export_title: "Export",
@@ -1436,9 +1481,26 @@ var Ke = {
 		not_loaded: "Ban Guard is not loaded.",
 		unauthorized: "Only administrators can use Ban Guard.",
 		invalid: "Invalid entry: {detail}"
+	},
+	enforcement: {
+		not_enforced: "Not enforced",
+		partial: "Partly exempt",
+		reasons: {
+			allowlisted: "The address is on the allowlist.",
+			protected_admin: "An administrator used {protected} in the last day, so it is never blocked.",
+			protected_host: "{protected} is this Home Assistant host's own address.",
+			protected_loopback: "{protected} is a loopback address.",
+			protected_unspecified: "{protected} can never be blocked.",
+			protected_supervisor: "{protected} is the Supervisor network.",
+			protected_proxy: "{protected} is a trusted proxy.",
+			protected_current: "{protected} is your current address.",
+			partial: "Not applied to {exempt} (protected or allowlisted).",
+			hook: "Request protection is not active ({status}).",
+			unknown: "Ban Guard cannot apply this ban right now."
+		}
 	}
-}, qe = { en: Ke };
-function Je(e, t) {
+}, Ye = { en: Je };
+function Xe(e, t) {
 	let n = e;
 	for (let e of t.split(".")) {
 		if (n === void 0 || typeof n == "string") return;
@@ -1446,21 +1508,21 @@ function Je(e, t) {
 	}
 	return typeof n == "string" ? n : void 0;
 }
-function Ye(e) {
+function Ze(e) {
 	if (!e) return "en";
-	if (e in qe) return e;
+	if (e in Ye) return e;
 	let t = e.split("-")[0] ?? "en";
-	return t in qe ? t : "en";
+	return t in Ye ? t : "en";
 }
-function Xe(e) {
-	let t = qe[Ye(e)] ?? Ke;
+function Qe(e) {
+	let t = Ye[Ze(e)] ?? Je;
 	return (e, n) => {
-		let r = Je(t, e) ?? Je(Ke, e) ?? e;
+		let r = Xe(t, e) ?? Xe(Je, e) ?? e;
 		return n ? r.replace(/\{(\w+)\}/g, (e, t) => t in n ? String(n[t]) : e) : r;
 	};
 }
 // src/views/activity.ts
-var Ze = [
+var $e = [
 	"login",
 	"failed_login",
 	"allowlisted_failure",
@@ -1471,7 +1533,7 @@ var Ze = [
 	"allow",
 	"disallow",
 	"refused"
-], W = 100, Qe = 1e3, $e = {
+], W = 100, et = 1e3, tt = {
 	login: "good",
 	failed_login: "warn",
 	allowlisted_failure: "warn",
@@ -1480,7 +1542,7 @@ var Ze = [
 	refused: "bad",
 	unban: "good",
 	allow: "good"
-}, G = class extends M {
+}, G = class extends j {
 	constructor(...e) {
 		super(...e), this.entries = null, this.filter = "all", this.live = !0, this.more = !0, this.unsub = null, this.buffered = [];
 	}
@@ -1501,7 +1563,7 @@ var Ze = [
 		}
 	}
 	onEntry(e) {
-		this.live ? (this.filter === "all" || e.type === this.filter) && (this.entries = [e, ...this.entries ?? []].slice(0, Qe)) : this.buffered.push(e);
+		this.live ? (this.filter === "all" || e.type === this.filter) && (this.entries = [e, ...this.entries ?? []].slice(0, et)) : this.buffered.push(e);
 	}
 	types() {
 		return this.filter === "all" ? void 0 : [this.filter];
@@ -1533,7 +1595,7 @@ var Ze = [
 	toggleLive() {
 		if (this.live = !this.live, this.live && this.buffered.length) {
 			let e = this.buffered.filter((e) => this.filter === "all" || e.type === this.filter).reverse();
-			this.entries = [...e, ...this.entries ?? []].slice(0, Qe), this.buffered = [];
+			this.entries = [...e, ...this.entries ?? []].slice(0, et), this.buffered = [];
 		}
 	}
 	render() {
@@ -1545,7 +1607,7 @@ var Ze = [
 		}}
       >
         <option value="all">${e("activity.all")}</option>
-        ${Ze.map((t) => w`<option value=${t} ?selected=${this.filter === t}>
+        ${$e.map((t) => w`<option value=${t} ?selected=${this.filter === t}>
               ${e(`activity.types.${t}`)}
             </option>`)}
       </select>
@@ -1580,7 +1642,7 @@ var Ze = [
             ${this.entries.map((n) => w`<tr>
                 <td class="time">${H(n.ts, t)}</td>
                 <td>
-                  <span class="chip ${$e[n.type] ?? ""}">${e(`activity.types.${n.type}`)}</span>
+                  <span class="chip ${tt[n.type] ?? ""}">${e(`activity.types.${n.type}`)}</span>
                 </td>
                 <td>
                   <button
@@ -1616,7 +1678,7 @@ var Ze = [
       </ha-card>`;
 	}
 	static {
-		this.styles = [R, o`
+		this.styles = [L, o`
       .toolbar {
         margin-bottom: 8px;
       }
@@ -1649,51 +1711,51 @@ var Ze = [
     `];
 	}
 };
-z([P({ attribute: !1 })], G.prototype, "ctx", void 0), z([F()], G.prototype, "entries", void 0), z([F()], G.prototype, "filter", void 0), z([F()], G.prototype, "live", void 0), z([F()], G.prototype, "more", void 0), G = z([N("bg-activity")], G);
+R([N({ attribute: !1 })], G.prototype, "ctx", void 0), R([P()], G.prototype, "entries", void 0), R([P()], G.prototype, "filter", void 0), R([P()], G.prototype, "live", void 0), R([P()], G.prototype, "more", void 0), G = R([M("bg-activity")], G);
 // src/logic/ip.ts
-var et = "(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)", tt = RegExp(`^${et}(\\.${et}){3}$`), nt = /^(?=.{1,253}$)(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))*\.?$/i;
-function rt(e) {
-	return tt.test(e);
+var nt = "(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)", rt = RegExp(`^${nt}(\\.${nt}){3}$`), it = /^(?=.{1,253}$)(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))*\.?$/i;
+function at(e) {
+	return rt.test(e);
 }
-function it(e) {
+function ot(e) {
 	let t = e.split("%")[0] ?? "";
 	if (!/^[0-9a-f:.]+$/i.test(t) || !t.includes(":") || t.includes(":::") || /^:[^:]/.test(t) || /[^:]:$/.test(t)) return !1;
 	let n = t.split("::").length - 1;
 	if (n > 1) return !1;
 	let r = t.split(":"), i = r[r.length - 1] ?? "", a = 8;
 	if (i.includes(".")) {
-		if (!rt(i)) return !1;
+		if (!at(i)) return !1;
 		r = r.slice(0, -1), a = 6;
 	}
 	if (n === 0) return r.length === a && r.every((e) => /^[0-9a-f]{1,4}$/i.test(e));
 	let o = r.filter((e) => e !== "");
 	return o.length < a && o.every((e) => /^[0-9a-f]{1,4}$/i.test(e));
 }
-function at(e) {
-	return rt(e) || it(e);
+function st(e) {
+	return at(e) || ot(e);
 }
-function ot(e) {
+function ct(e) {
 	let [t, n, ...r] = e.split("/");
 	if (r.length || t === void 0 || n === void 0 || !/^\d{1,3}$/.test(n)) return !1;
 	let i = Number(n);
-	return rt(t) ? i <= 32 : it(t) ? i <= 128 : !1;
-}
-function st(e) {
-	let t = e.trim();
-	return at(t) || ot(t);
-}
-function ct(e) {
-	let t = e.trim();
-	return nt.test(t) && !at(t) && /[a-z]/i.test(t);
+	return at(t) ? i <= 32 : ot(t) ? i <= 128 : !1;
 }
 function lt(e) {
-	return st(e) || ct(e);
+	let t = e.trim();
+	return st(t) || ct(t);
 }
 function ut(e) {
+	let t = e.trim();
+	return it.test(t) && !st(t) && /[a-z]/i.test(t);
+}
+function dt(e) {
+	return lt(e) || ut(e);
+}
+function ft(e) {
 	return [...new Set(e.split(/[\s,;]+/).map((e) => e.trim()).filter(Boolean))];
 }
-var dt = /^(\d+)\s*([smhdw])$/i;
-function ft(e) {
+var pt = /^(\d+)\s*([smhdw])$/i;
+function mt(e) {
 	let t = e.trim().toLowerCase();
 	if ([
 		"permanent",
@@ -1702,11 +1764,11 @@ function ft(e) {
 		"never",
 		"0"
 	].includes(t)) return !0;
-	let n = dt.exec(t);
+	let n = pt.exec(t);
 	return n !== null && Number(n[1]) > 0;
 }
 // src/views/allowlist.ts
-var K = class extends M {
+var K = class extends j {
 	constructor(...e) {
 		super(...e), this.revision = 0, this.requesterIp = null, this.entries = null, this.adding = !1, this.value = "", this.comment = "", this.formError = "", this.busy = !1;
 	}
@@ -1726,7 +1788,7 @@ var K = class extends M {
 	async submit(e) {
 		e.preventDefault();
 		let { t } = this.ctx, n = this.value.trim();
-		if (!lt(n)) this.formError = t("allowlist.invalid", { value: n });
+		if (!dt(n)) this.formError = t("allowlist.invalid", { value: n });
 		else {
 			this.busy = !0;
 			try {
@@ -1743,7 +1805,7 @@ var K = class extends M {
 					}
 				});
 			} catch (e) {
-				this.formError = L(e, t);
+				this.formError = I(e, t);
 			} finally {
 				this.busy = !1;
 			}
@@ -1859,16 +1921,16 @@ var K = class extends M {
         ${this.dialog()}`;
 	}
 	static {
-		this.styles = [R, o`
+		this.styles = [L, o`
       .toolbar {
         margin-bottom: 8px;
       }
     `];
 	}
 };
-z([P({ attribute: !1 })], K.prototype, "ctx", void 0), z([P({ type: Number })], K.prototype, "revision", void 0), z([P()], K.prototype, "requesterIp", void 0), z([F()], K.prototype, "entries", void 0), z([F()], K.prototype, "adding", void 0), z([F()], K.prototype, "value", void 0), z([F()], K.prototype, "comment", void 0), z([F()], K.prototype, "formError", void 0), z([F()], K.prototype, "busy", void 0), K = z([N("bg-allowlist")], K);
+R([N({ attribute: !1 })], K.prototype, "ctx", void 0), R([N({ type: Number })], K.prototype, "revision", void 0), R([N()], K.prototype, "requesterIp", void 0), R([P()], K.prototype, "entries", void 0), R([P()], K.prototype, "adding", void 0), R([P()], K.prototype, "value", void 0), R([P()], K.prototype, "comment", void 0), R([P()], K.prototype, "formError", void 0), R([P()], K.prototype, "busy", void 0), K = R([M("bg-allowlist")], K);
 // src/logic/backup.ts
-function pt(e) {
+function ht(e) {
 	let t;
 	try {
 		t = JSON.parse(e);
@@ -1887,14 +1949,14 @@ function pt(e) {
 	};
 }
 // src/views/backup.ts
-var q = class extends M {
+var q = class extends j {
 	constructor(...e) {
 		super(...e), this.data = null, this.preview = null, this.includeSettings = !1, this.error = "", this.busy = !1;
 	}
 	async exportBackup() {
 		try {
 			let e = await this.ctx.api.exportBackup(), t = new Blob([JSON.stringify(e, null, 2)], { type: "application/json" }), n = URL.createObjectURL(t), r = document.createElement("a");
-			r.href = n, r.download = We("ban_guard", /* @__PURE__ */ new Date()), r.click(), URL.revokeObjectURL(n);
+			r.href = n, r.download = Ke("ban_guard", /* @__PURE__ */ new Date()), r.click(), URL.revokeObjectURL(n);
 		} catch (e) {
 			this.ctx.error(e);
 		}
@@ -1902,14 +1964,14 @@ var q = class extends M {
 	async onFile(e) {
 		let { t } = this.ctx, n = e.target.files?.[0];
 		if (this.preview = null, this.error = "", !n) return;
-		let r = pt(await n.text());
+		let r = ht(await n.text());
 		if (!r.ok) this.error = t(`backup.${r.error}`);
 		else {
 			this.data = r.data;
 			try {
 				this.preview = (await this.ctx.api.importBackup(r.data, !0, !1)).preview;
 			} catch (e) {
-				this.error = L(e, t);
+				this.error = I(e, t);
 			}
 		}
 	}
@@ -1919,7 +1981,7 @@ var q = class extends M {
 		try {
 			await this.ctx.api.importBackup(this.data, !1, this.includeSettings), this.ctx.toast({ message: e("backup.applied") }), this.preview = null, this.data = null;
 		} catch (t) {
-			this.error = L(t, e);
+			this.error = I(t, e);
 		} finally {
 			this.busy = !1;
 		}
@@ -1978,7 +2040,7 @@ var q = class extends M {
     </div>`;
 	}
 	static {
-		this.styles = [R, o`
+		this.styles = [L, o`
       .grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -2003,16 +2065,16 @@ var q = class extends M {
     `];
 	}
 };
-z([P({ attribute: !1 })], q.prototype, "ctx", void 0), z([F()], q.prototype, "data", void 0), z([F()], q.prototype, "preview", void 0), z([F()], q.prototype, "includeSettings", void 0), z([F()], q.prototype, "error", void 0), z([F()], q.prototype, "busy", void 0), q = z([N("bg-backup")], q);
+R([N({ attribute: !1 })], q.prototype, "ctx", void 0), R([P()], q.prototype, "data", void 0), R([P()], q.prototype, "preview", void 0), R([P()], q.prototype, "includeSettings", void 0), R([P()], q.prototype, "error", void 0), R([P()], q.prototype, "busy", void 0), q = R([M("bg-backup")], q);
 // src/logic/table.ts
-var mt = {
+var gt = {
 	search: "",
 	source: "all",
 	kind: "all",
 	sort: "created_at",
 	dir: "desc"
 };
-function ht(e, t) {
+function _t(e, t) {
 	if (!t) return !0;
 	let n = [
 		e.ip,
@@ -2023,10 +2085,11 @@ function ht(e, t) {
 	].join(" ").toLowerCase();
 	return t.toLowerCase().split(/\s+/).filter(Boolean).every((e) => n.includes(e));
 }
-function gt(e, t) {
+function vt(e, t) {
 	switch (t) {
 		case "permanent": return e.expires_at === null;
 		case "temporary": return e.expires_at !== null;
+		case "unenforced": return Ve(e);
 		case "network": return !e.single;
 		default: return !0;
 	}
@@ -2041,7 +2104,7 @@ function J(e) {
 		...a
 	].map((e) => e.padStart(4, "0")).join("");
 }
-function _t(e, t, n) {
+function yt(e, t, n) {
 	switch (n) {
 		case "ip": return J(e.ip).localeCompare(J(t.ip));
 		case "expires_at": {
@@ -2053,11 +2116,11 @@ function _t(e, t, n) {
 		case "source": return e.source.localeCompare(t.source);
 	}
 }
-function vt(e, t) {
-	let n = e.filter((e) => ht(e, t.search.trim()) && (t.source === "all" || e.source === t.source) && gt(e, t.kind)), r = t.dir === "asc" ? 1 : -1;
-	return n.sort((e, n) => r * _t(e, n, t.sort) || J(e.ip).localeCompare(J(n.ip)));
+function bt(e, t) {
+	let n = e.filter((e) => _t(e, t.search.trim()) && (t.source === "all" || e.source === t.source) && vt(e, t.kind)), r = t.dir === "asc" ? 1 : -1;
+	return n.sort((e, n) => r * yt(e, n, t.sort) || J(e.ip).localeCompare(J(n.ip)));
 }
-function yt(e, t) {
+function xt(e, t) {
 	return e.sort === t ? {
 		...e,
 		dir: e.dir === "asc" ? "desc" : "asc"
@@ -2068,21 +2131,22 @@ function yt(e, t) {
 	};
 }
 // src/views/bans.ts
-var bt = [
+var St = [
 	"all",
 	"manual",
 	"automatic",
 	"service",
 	"imported",
 	"home_assistant"
-], xt = [
+], Ct = [
 	"all",
 	"permanent",
 	"temporary",
-	"network"
-], Y = class extends M {
+	"network",
+	"unenforced"
+], Y = class extends j {
 	constructor(...e) {
-		super(...e), this.revision = 0, this.bans = null, this.query = { ...mt }, this.selected = /* @__PURE__ */ new Set(), this.now = Date.now(), this.adding = !1, this.form = {
+		super(...e), this.revision = 0, this.bans = null, this.query = { ...gt }, this.selected = /* @__PURE__ */ new Set(), this.now = Date.now(), this.adding = !1, this.form = {
 			ips: "",
 			reason: "",
 			duration: "permanent"
@@ -2134,23 +2198,44 @@ var bt = [
 	}
 	async submit(e) {
 		e.preventDefault();
-		let { t } = this.ctx, n = ut(this.form.ips), r = n.find((e) => !st(e));
+		let { t } = this.ctx, n = ft(this.form.ips), r = n.find((e) => !lt(e));
 		if (!n.length || r !== void 0) this.formError = t("bans.invalid_ip", { value: r ?? "" });
-		else if (!ft(this.form.duration)) this.formError = t("bans.invalid_duration");
+		else if (!mt(this.form.duration)) this.formError = t("bans.invalid_duration");
 		else {
 			this.busy = !0, this.formError = "";
 			try {
-				for (let e of n) await this.ctx.api.ban(e, this.form.reason, this.form.duration);
-				this.adding = !1, this.ctx.toast({ message: t("bans.banned", { ip: n.join(", ") }) }), this.form = {
+				let e = [];
+				for (let t of n) e.push(await this.ctx.api.ban(t, this.form.reason, this.form.duration));
+				this.adding = !1, this.form = {
 					ips: "",
 					reason: "",
 					duration: "permanent"
 				};
+				let r = e.filter(Ve);
+				r.length ? await this.warnUnenforced(r) : this.ctx.toast({ message: t("bans.banned", { ip: n.join(", ") }) });
 			} catch (e) {
-				this.formError = L(e, t);
+				this.formError = I(e, t);
 			} finally {
 				this.busy = !1;
 			}
+		}
+	}
+	async warnUnenforced(e) {
+		let { t } = this.ctx, n = e.map((e) => `${e.ip}: ${B(e.enforcement, t).detail}`), r = e.filter((e) => e.enforcement && !e.enforcement.enforced);
+		if (!r.length) this.ctx.toast({
+			message: `${t("bans.partial_title")}. ${n.join(" ")}`,
+			duration: 15e3
+		});
+		else if (await this.ctx.confirm({
+			title: t("bans.unenforced_title", { count: r.length }),
+			body: `${n.join(" ")} ${t("bans.unenforced_body")}`,
+			confirm: t("bans.unenforced_remove"),
+			cancel: t("bans.unenforced_keep"),
+			destructive: !0
+		})) try {
+			await this.ctx.api.unban(r.map((e) => e.ip));
+		} catch (e) {
+			this.ctx.error(e);
 		}
 	}
 	toggle(e, t) {
@@ -2161,17 +2246,24 @@ var bt = [
 		let r = this.query.sort === e;
 		return w`<th aria-sort=${r ? this.query.dir === "asc" ? "ascending" : "descending" : "none"} class=${n}>
       <button
-        @click=${() => this.query = yt(this.query, e)}
+        @click=${() => this.query = xt(this.query, e)}
         aria-label=${this.ctx.t("bans.sort_by", { column: t })}
       >
         ${t}${r ? this.query.dir === "asc" ? " ▲" : " ▼" : ""}
       </button>
     </th>`;
 	}
+	enforcementChip(e) {
+		let t = B(e.enforcement, this.ctx.t);
+		return t.level === "ok" ? E : w`<div class="enforcement">
+      <span class="chip ${t.level === "off" ? "bad" : "warn"}">${t.label}</span>
+      <span class="why">${t.detail}</span>
+    </div>`;
+	}
 	expiry(e) {
-		let { t } = this.ctx, n = Be(e.expires_at, this.now);
+		let { t } = this.ctx, n = He(e.expires_at, this.now);
 		return n ? n.expired ? w`<span class="chip">${t("common.expired")}</span>` : w`<span class="chip warn" title=${H(e.expires_at, this.ctx.language)}>
-      ${Ve(n)}
+      ${Ue(n)}
     </span>` : w`<span class="chip">${t("common.permanent")}</span>`;
 	}
 	renderDialog() {
@@ -2245,7 +2337,7 @@ var bt = [
 	render() {
 		let { t: e, language: t } = this.ctx;
 		if (this.bans === null) return w`<p class="muted">${e("common.loading")}</p>`;
-		let n = vt(this.bans, this.query), r = n.length > 0 && n.every((e) => this.selected.has(e.ip)), i = w`<div class="row toolbar">
+		let n = bt(this.bans, this.query), r = n.length > 0 && n.every((e) => this.selected.has(e.ip)), i = w`<div class="row toolbar">
       <input
         type="search"
         class="search"
@@ -2264,7 +2356,7 @@ var bt = [
 			source: e.target.value
 		}}
       >
-        ${bt.map((t) => w`<option value=${t} ?selected=${this.query.source === t}>
+        ${St.map((t) => w`<option value=${t} ?selected=${this.query.source === t}>
               ${e(`bans.source_${t}`)}
             </option>`)}
       </select>
@@ -2275,7 +2367,7 @@ var bt = [
 			kind: e.target.value
 		}}
       >
-        ${xt.map((t) => w`<option value=${t} ?selected=${this.query.kind === t}>
+        ${Ct.map((t) => w`<option value=${t} ?selected=${this.query.kind === t}>
               ${e(`bans.kind_${t}`)}
             </option>`)}
       </select>
@@ -2337,6 +2429,7 @@ var bt = [
                         >
                           ${n.ip}
                         </button>
+                        ${this.enforcementChip(n)}
                       </td>
                       <td class="hide-narrow" title=${n.city ?? ""}>
                         ${n.country ? `${V(n.country)} ${n.country}` : ""}
@@ -2371,7 +2464,7 @@ var bt = [
         ${this.renderDialog()}`;
 	}
 	static {
-		this.styles = [R, o`
+		this.styles = [L, o`
       .toolbar {
         margin-bottom: 8px;
       }
@@ -2393,6 +2486,16 @@ var bt = [
         border-radius: 0;
         text-align: start;
       }
+      .enforcement {
+        margin-top: 4px;
+        font-size: 0.8rem;
+        color: var(--secondary-text-color);
+        max-width: 360px;
+      }
+      .enforcement .why {
+        display: block;
+        margin-top: 2px;
+      }
       .reason {
         max-width: 240px;
         overflow: hidden;
@@ -2405,9 +2508,9 @@ var bt = [
     `];
 	}
 };
-z([P({ attribute: !1 })], Y.prototype, "ctx", void 0), z([P({ type: Number })], Y.prototype, "revision", void 0), z([F()], Y.prototype, "bans", void 0), z([F()], Y.prototype, "query", void 0), z([F()], Y.prototype, "selected", void 0), z([F()], Y.prototype, "now", void 0), z([F()], Y.prototype, "adding", void 0), z([F()], Y.prototype, "form", void 0), z([F()], Y.prototype, "formError", void 0), z([F()], Y.prototype, "busy", void 0), Y = z([N("bg-bans")], Y);
+R([N({ attribute: !1 })], Y.prototype, "ctx", void 0), R([N({ type: Number })], Y.prototype, "revision", void 0), R([P()], Y.prototype, "bans", void 0), R([P()], Y.prototype, "query", void 0), R([P()], Y.prototype, "selected", void 0), R([P()], Y.prototype, "now", void 0), R([P()], Y.prototype, "adding", void 0), R([P()], Y.prototype, "form", void 0), R([P()], Y.prototype, "formError", void 0), R([P()], Y.prototype, "busy", void 0), Y = R([M("bg-bans")], Y);
 // src/views/overview.ts
-var X = class extends M {
+var X = class extends j {
 	constructor(...e) {
 		super(...e), this.revision = 0, this.data = null, this.failed = !1;
 	}
@@ -2430,7 +2533,7 @@ var X = class extends M {
 		return r ? w`<button class="card stat" @click=${() => this.ctx.navigate(r)}>${i}</button>` : w`<div class="card stat">${i}</div>`;
 	}
 	chart(e) {
-		let { t, language: n } = this.ctx, r = e.failed_logins_7d, { ratios: i } = He(r.map((e) => e.count)), a = 340 / r.length, o = new Intl.DateTimeFormat(n, { weekday: "short" });
+		let { t, language: n } = this.ctx, r = e.failed_logins_7d, { ratios: i } = We(r.map((e) => e.count)), a = 340 / r.length, o = new Intl.DateTimeFormat(n, { weekday: "short" });
 		return w`<figure>
       <svg viewBox="0 0 ${340} ${164}" role="img" aria-label=${t("overview.chart_title")}>
         <line x1="0" y1=${140} x2=${340} y2=${140} class="axis"></line>
@@ -2510,7 +2613,7 @@ var X = class extends M {
     `;
 	}
 	static {
-		this.styles = [R, o`
+		this.styles = [L, o`
       .stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -2585,9 +2688,9 @@ var X = class extends M {
     `];
 	}
 };
-z([P({ attribute: !1 })], X.prototype, "ctx", void 0), z([P({ type: Number })], X.prototype, "revision", void 0), z([F()], X.prototype, "data", void 0), z([F()], X.prototype, "failed", void 0), X = z([N("bg-overview")], X);
+R([N({ attribute: !1 })], X.prototype, "ctx", void 0), R([N({ type: Number })], X.prototype, "revision", void 0), R([P()], X.prototype, "data", void 0), R([P()], X.prototype, "failed", void 0), X = R([M("bg-overview")], X);
 // src/views/settings.ts
-var Z = class extends M {
+var Z = class extends j {
 	constructor(...e) {
 		super(...e), this.settings = null, this.syncing = !1;
 	}
@@ -2601,7 +2704,7 @@ var Z = class extends M {
 			let t = await this.ctx.api.npmSync();
 			this.ctx.toast({ message: t.ok ? e("settings.npm_synced", { count: t.count ?? 0 }) : e("settings.npm_failed", { error: t.error ?? "?" }) });
 		} catch (t) {
-			this.ctx.toast({ message: L(t, e) });
+			this.ctx.toast({ message: I(t, e) });
 		} finally {
 			this.syncing = !1;
 		}
@@ -2627,6 +2730,7 @@ var Z = class extends M {
 			ladder: String(n.escalation)
 		}) : e("settings.off"))}
         ${this.item(e("settings.logins"), r(t.status.login_logging))}
+        ${this.item(e("settings.sessions"), r(t.status.session_closing))}
         ${this.item(e("settings.notifications"), r(n.notify_persistent))}
         ${this.item(e("settings.logging"), e("settings.logging_value", {
 			days: String(n.log_retention_days),
@@ -2657,7 +2761,7 @@ var Z = class extends M {
     </ha-card>`;
 	}
 	static {
-		this.styles = [R, o`
+		this.styles = [L, o`
       dl {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -2682,7 +2786,7 @@ var Z = class extends M {
     `];
 	}
 };
-z([P({ attribute: !1 })], Z.prototype, "ctx", void 0), z([P({ attribute: !1 })], Z.prototype, "settings", void 0), z([F()], Z.prototype, "syncing", void 0), Z = z([N("bg-settings")], Z);
+R([N({ attribute: !1 })], Z.prototype, "ctx", void 0), R([N({ attribute: !1 })], Z.prototype, "settings", void 0), R([P()], Z.prototype, "syncing", void 0), Z = R([M("bg-settings")], Z);
 // src/ban-guard-panel.ts
 var Q = [
 	{
@@ -2709,7 +2813,7 @@ var Q = [
 		id: "backup",
 		icon: "mdi:swap-vertical"
 	}
-], $ = class extends M {
+], $ = class extends j {
 	constructor(...e) {
 		super(...e), this.narrow = !1, this.tab = "overview", this.revision = 0, this.details = null, this.settings = null, this.api = null, this.ctx = null, this.language = "", this.unsub = null;
 	}
@@ -2724,7 +2828,7 @@ var Q = [
 	willUpdate(e) {
 		if (!e.has("hass") || !this.hass) return;
 		let t = this.hass.locale?.language ?? this.hass.language ?? "en", n = this.api === null;
-		(n || t !== this.language) && (this.language = t, this.api ??= new Re(this.hass), this.ctx = this.makeCtx(this.api, Xe(t))), n && (this.subscribe(), this.loadSettings());
+		(n || t !== this.language) && (this.language = t, this.api ??= new ze(this.hass), this.ctx = this.makeCtx(this.api, Qe(t))), n && (this.subscribe(), this.loadSettings());
 	}
 	makeCtx(e, t) {
 		return {
@@ -2735,10 +2839,10 @@ var Q = [
 			confirm: (e) => this.confirmEl.ask({
 				...e,
 				confirm: e.confirm ?? t("common.confirm"),
-				cancel: t("common.cancel")
+				cancel: e.cancel ?? t("common.cancel")
 			}),
 			toast: (e) => this.toastEl.show(e),
-			error: (e) => this.toastEl.show({ message: L(e, t) }),
+			error: (e) => this.toastEl.show({ message: I(e, t) }),
 			openDetails: (e) => this.details = e,
 			navigate: (e) => this.select(e)
 		};
@@ -2839,7 +2943,7 @@ var Q = [
     `;
 	}
 	static {
-		this.styles = [R, o`
+		this.styles = [L, o`
       :host {
         display: block;
         min-height: 100vh;
@@ -2905,5 +3009,5 @@ var Q = [
     `];
 	}
 };
-z([P({ attribute: !1 })], $.prototype, "hass", void 0), z([P({ type: Boolean })], $.prototype, "narrow", void 0), z([F()], $.prototype, "tab", void 0), z([F()], $.prototype, "revision", void 0), z([F()], $.prototype, "details", void 0), z([F()], $.prototype, "settings", void 0), z([I("bg-confirm")], $.prototype, "confirmEl", void 0), z([I("bg-toast")], $.prototype, "toastEl", void 0), $ = z([N("ban-guard-panel")], $);
+R([N({ attribute: !1 })], $.prototype, "hass", void 0), R([N({ type: Boolean })], $.prototype, "narrow", void 0), R([P()], $.prototype, "tab", void 0), R([P()], $.prototype, "revision", void 0), R([P()], $.prototype, "details", void 0), R([P()], $.prototype, "settings", void 0), R([F("bg-confirm")], $.prototype, "confirmEl", void 0), R([F("bg-toast")], $.prototype, "toastEl", void 0), $ = R([M("ban-guard-panel")], $);
 export { $ as BanGuardPanel };
