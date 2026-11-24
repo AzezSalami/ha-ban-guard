@@ -102,6 +102,8 @@ def async_register_websocket(hass: HomeAssistant) -> None:
         ws_import,
         ws_settings,
         ws_npm_sync,
+        ws_sessions,
+        ws_disconnect,
     ):
         websocket_api.async_register_command(hass, command)
 
@@ -445,3 +447,50 @@ async def ws_npm_sync(
     """Sync to Nginx Proxy Manager now."""
     await manager.async_npm_sync()
     connection.send_result(msg["id"], manager.npm_status)
+
+
+def _current_transport() -> Any:
+    """Transport of the websocket the admin is using right now (to mark it)."""
+    from homeassistant.helpers.http import current_request  # noqa: PLC0415
+
+    request = current_request.get()
+    return getattr(request, "transport", None) if request is not None else None
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ban_guard/sessions"})
+@websocket_api.require_admin
+@websocket_api.async_response
+@_with_manager
+async def ws_sessions(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+    manager: BanGuardManager,
+) -> None:
+    """List open sessions."""
+    connection.send_result(
+        msg["id"],
+        {
+            "available": manager.status()["session_closing"],
+            "sessions": manager.sessions_view(_current_transport()),
+        },
+    )
+
+
+@websocket_api.websocket_command(
+    {vol.Required("type"): "ban_guard/disconnect", vol.Required("session_id"): str}
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+@_with_manager
+async def ws_disconnect(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+    manager: BanGuardManager,
+) -> None:
+    """Close one session."""
+    await manager.async_disconnect(
+        msg["session_id"], user=connection.user.id, current_transport=_current_transport()
+    )
+    connection.send_result(msg["id"])

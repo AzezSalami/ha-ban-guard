@@ -29,6 +29,8 @@ COMMANDS: list[dict[str, Any]] = [
     {"type": "ban_guard/import", "data": {}},
     {"type": "ban_guard/settings"},
     {"type": "ban_guard/npm_sync"},
+    {"type": "ban_guard/sessions"},
+    {"type": "ban_guard/disconnect", "session_id": "x"},
 ]
 
 

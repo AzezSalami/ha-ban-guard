@@ -6,11 +6,13 @@ import asyncio
 from collections import deque
 from collections.abc import Callable, Iterable
 import contextlib
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from ipaddress import ip_address
 import logging
 import time
 from typing import Any
+import uuid
 
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
@@ -116,6 +118,31 @@ GEOIP_CHECK_INTERVAL = timedelta(days=1)
 HOOK_ERROR_LIMIT = 20
 HOOK_ERROR_WINDOW = 60.0
 MAX_TRACKED_SESSIONS = 5000
+
+
+@dataclass(slots=True)
+class Session:
+    """An open, authenticated websocket session (kept in memory only)."""
+
+    id: str
+    addr: IPAddress
+    transport: Any
+    connected_at: datetime
+    user: str | None = None
+    user_id: str | None = None
+    client_id: str | None = None
+    client_name: str | None = None
+    user_agent: str | None = None
+
+    @property
+    def closed(self) -> bool:
+        """True once the connection is gone."""
+        try:
+            return bool(self.transport.is_closing())
+        except Exception:  # noqa: BLE001 - a broken transport is gone
+            return True
+
+
 REVERT_DELAY = 2.0
 EXPORT_VERSION = 1
 EXPORTABLE_SETTINGS_EXCLUDE = {CONF_NPM_SECRET, "npm_password"}
@@ -171,8 +198,8 @@ class BanGuardManager:
         self._blocked_logged: dict[IPAddress, float] = {}
         self._hook_errors: deque[float] = deque(maxlen=HOOK_ERROR_LIMIT)
         self._unsubs: list[CALLBACK_TYPE] = []
-        # Open websocket sessions: id(transport) -> (address, transport).
-        self._sessions: dict[int, tuple[IPAddress, Any]] = {}
+        # Open websocket sessions by session id. Memory only, never stored.
+        self._sessions: dict[str, Session] = {}
         self._yaml_lock = asyncio.Lock()
         self.hook: Hook | None = None
         self.hook_status = "not_started"
@@ -596,8 +623,8 @@ class BanGuardManager:
         self._failures.pop(addr, None)
         self.activity.add(ACT_LOGIN, str(addr), path=path, user_agent=agent, user=user_name)
 
-    def hook_session_opened(self, request: Any) -> None:
-        """A websocket session authenticated; remember it so a ban can close it."""
+    def hook_session_opened(self, request: Any, info: dict[str, str | None] | None = None) -> None:
+        """A websocket session authenticated; track it for the panel and for bans."""
         remote = getattr(request, "remote", None)
         transport = getattr(request, "transport", None)
         if not remote or transport is None:
@@ -605,13 +632,39 @@ class BanGuardManager:
         self._prune_sessions()
         if len(self._sessions) >= MAX_TRACKED_SESSIONS:
             return
-        addr = normalize_address(ip_address(remote))
-        self._sessions[id(transport)] = (addr, transport)
+        info = info or {}
+        headers = getattr(request, "headers", None)
+        agent = headers.get("User-Agent") if headers is not None else None
+        session = Session(
+            id=uuid.uuid4().hex,
+            addr=normalize_address(ip_address(remote)),
+            transport=transport,
+            connected_at=dt_util.utcnow(),
+            user=info.get("user"),
+            user_id=info.get("user_id"),
+            client_id=info.get("client_id"),
+            client_name=info.get("client_name"),
+            user_agent=sanitize_user_agent(agent if isinstance(agent, str) else None),
+        )
+        self._sessions[session.id] = session
+        # The request's task ends when the websocket closes: drop it right away.
+        task = getattr(request, "task", None)
+        if task is not None and hasattr(task, "add_done_callback"):
+            task.add_done_callback(lambda _task, sid=session.id: self._session_ended(sid))
+        async_dispatcher_send(self.hass, SIGNAL_UPDATE)
 
-    def _prune_sessions(self) -> None:
-        for key, (_addr, transport) in list(self._sessions.items()):
-            if transport.is_closing():
+    @callback
+    def _session_ended(self, session_id: str) -> None:
+        if self._sessions.pop(session_id, None) is not None:
+            async_dispatcher_send(self.hass, SIGNAL_UPDATE)
+
+    def _prune_sessions(self) -> bool:
+        removed = False
+        for key, session in list(self._sessions.items()):
+            if session.closed:
                 del self._sessions[key]
+                removed = True
+        return removed
 
     def _close_sessions(self, networks: Iterable[IPNetwork]) -> int:
         """Close open sessions from addresses that are now banned and enforced."""
@@ -619,23 +672,75 @@ class BanGuardManager:
         if not nets or not self.hook_active_flag:
             return 0
         closed: dict[str, int] = {}
-        for key, (addr, transport) in list(self._sessions.items()):
-            if transport.is_closing():
+        for key, session in list(self._sessions.items()):
+            addr = session.addr
+            if session.closed:
                 del self._sessions[key]
                 continue
             if not any(addr.version == n.version and addr in n for n in nets):
                 continue
             if self.is_allowlisted(addr) or self.guard.is_protected(addr):
                 continue
-            try:
-                transport.close()
-            except Exception:
-                _LOGGER.debug("Closing session from %s failed", addr, exc_info=True)
+            self._close_transport(session)
             del self._sessions[key]
             closed[str(addr)] = closed.get(str(addr), 0) + 1
         for ip, count in closed.items():
             self.activity.add(ACT_BLOCKED, ip, detail=f"session_closed:{count}")
+        if closed:
+            async_dispatcher_send(self.hass, SIGNAL_UPDATE)
         return sum(closed.values())
+
+    @staticmethod
+    def _close_transport(session: Session) -> None:
+        try:
+            session.transport.close()
+        except Exception:
+            _LOGGER.debug("Closing session from %s failed", session.addr, exc_info=True)
+
+    def sessions_view(self, current_transport: Any = None) -> list[dict[str, Any]]:
+        """Open sessions for the panel, newest first."""
+        if self._prune_sessions():
+            async_dispatcher_send(self.hass, SIGNAL_UPDATE)
+        rows = []
+        for session in sorted(self._sessions.values(), key=lambda s: s.connected_at, reverse=True):
+            ip = str(session.addr)
+            rows.append(
+                {
+                    "id": session.id,
+                    "ip": ip,
+                    "user": session.user,
+                    "client_id": session.client_id,
+                    "client_name": session.client_name,
+                    "user_agent": session.user_agent,
+                    "connected_at": session.connected_at.isoformat(),
+                    "country": self.country_of(ip),
+                    "current": current_transport is not None
+                    and session.transport is current_transport,
+                    "protected": self.guard.is_protected(session.addr),
+                    "allowlisted": self.is_allowlisted(session.addr),
+                }
+            )
+        return rows
+
+    async def async_disconnect(
+        self, session_id: str, *, user: str | None, current_transport: Any = None
+    ) -> None:
+        """Close one session. The admin's own session cannot be closed this way."""
+        session = self._sessions.get(session_id)
+        if session is None or session.closed:
+            self._sessions.pop(session_id, None)
+            raise BanGuardError("session_not_found")
+        if current_transport is not None and session.transport is current_transport:
+            raise BanGuardError("session_current")
+        self._close_transport(session)
+        del self._sessions[session_id]
+        self.activity.add(
+            ACT_BLOCKED,
+            str(session.addr),
+            detail="session_disconnected",
+            user=await self._async_user_name(user),
+        )
+        async_dispatcher_send(self.hass, SIGNAL_UPDATE)
 
     def _prune_failures(self, now: datetime) -> None:
         cutoff = now - timedelta(days=1)
@@ -949,7 +1054,8 @@ class BanGuardManager:
             await self._async_reconcile_yaml()
         self.activity.purge()
         self._prune_failures(dt_util.utcnow())
-        self._prune_sessions()
+        if self._prune_sessions():
+            async_dispatcher_send(self.hass, SIGNAL_UPDATE)
 
     async def _async_allowlist_tick(self, _now: datetime) -> None:
         await self._async_refresh_allowlist()
@@ -1145,6 +1251,7 @@ class BanGuardManager:
                 and self.hook.login_logging_available
                 and self.options[CONF_LOG_LOGINS]
             ),
+            "open_sessions": len(self._sessions),
             "session_closing": bool(
                 self.hook_active_flag
                 and self.hook is not None

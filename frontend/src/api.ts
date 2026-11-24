@@ -9,6 +9,7 @@ import type {
   History,
   ImportPreview,
   Overview,
+  SessionInfo,
   Settings,
   Status,
   WsError,
@@ -74,6 +75,14 @@ export class Api {
     return this.hass.connection.subscribeMessage(() => cb(), {
       type: "ban_guard/subscribe_updates",
     });
+  }
+
+  sessions(): Promise<{ available: boolean; sessions: SessionInfo[] }> {
+    return this.call("sessions");
+  }
+
+  disconnect(sessionId: string): Promise<void> {
+    return this.call("disconnect", { session_id: sessionId });
   }
 
   history(ip: string): Promise<History> {

@@ -241,3 +241,62 @@ describe("enforcement", () => {
     expect(rows.map((b) => b.ip).sort()).toEqual(["1.1.1.1", "10.0.0.0/8"]);
   });
 });
+
+import { describeClient } from "../src/logic/client";
+import { formatElapsed } from "../src/logic/format";
+
+describe("session clients", () => {
+  it("recognises the Companion apps from their client id", () => {
+    expect(describeClient("https://home-assistant.io/iOS", null, "Home Assistant/2026.11")).toEqual({
+      label: "Home Assistant iOS app",
+      kind: "app",
+    });
+    expect(describeClient("https://home-assistant.io/android", null, null).label).toBe(
+      "Home Assistant Android app",
+    );
+    expect(describeClient(null, null, "Home Assistant/2026.11 (io.robbie.HomeAssistant)").kind).toBe(
+      "app",
+    );
+  });
+
+  it("names browser and system from the user agent", () => {
+    const chrome =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36";
+    expect(describeClient("http://ha.local:8123/", null, chrome)).toEqual({
+      label: "Chrome on Windows",
+      kind: "browser",
+    });
+    const edge = `${chrome} Edg/140.0`;
+    expect(describeClient(null, null, edge).label).toBe("Edge on Windows");
+    const safari =
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+    expect(describeClient(null, null, safari).label).toBe("Safari on iOS");
+    expect(describeClient(null, null, "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0").label).toBe(
+      "Firefox on Linux",
+    );
+    expect(describeClient(null, null, "Safari/604.1").label).toBe("Safari");
+  });
+
+  it("falls back to client name, client host or raw agent", () => {
+    expect(describeClient("https://x.example/", "My Script", "curl/8").label).toBe("My Script");
+    expect(describeClient("https://x.example/path", null, "curl/8").label).toBe("x.example");
+    expect(describeClient("not a url", null, null).label).toBe("not a url");
+    expect(describeClient(null, null, "python-requests/2.32")).toEqual({
+      label: "python-requests/2.32",
+      kind: "other",
+    });
+    expect(describeClient(null, null, null).label).toBe("");
+  });
+});
+
+describe("elapsed time", () => {
+  const now = Date.parse("2026-01-03T12:00:00Z");
+  it("formats compactly", () => {
+    expect(formatElapsed("2026-01-03T11:59:15Z", now)).toBe("45s");
+    expect(formatElapsed("2026-01-03T11:48:00Z", now)).toBe("12m");
+    expect(formatElapsed("2026-01-03T08:55:00Z", now)).toBe("3h 05m");
+    expect(formatElapsed("2026-01-01T08:00:00Z", now)).toBe("2d 4h");
+    expect(formatElapsed("2026-01-03T12:00:30Z", now)).toBe("0s");
+    expect(formatElapsed("garbage", now)).toBe("");
+  });
+});

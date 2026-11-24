@@ -99,10 +99,16 @@
         ip, ban: bans.find((b) => b.ip === ip) ?? null, geo: { country: "DE", country_name: "Germany", city: "Frankfurt" },
         hostname: "tor-exit.example.org", offenses: 2, allowlisted: false, activity: activity.filter((a) => a.ip === ip),
       });
+      const sessions = [
+        { id: "s1", ip: "192.168.1.23", user: "Alex", client_id: "http://homeassistant.local:8123/", client_name: null, user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36 Edg/140.0", connected_at: iso(-0.3 * H), country: null, current: true, protected: true, allowlisted: true },
+        { id: "s2", ip: "84.241.200.17", user: "Alex", client_id: "https://home-assistant.io/iOS", client_name: null, user_agent: "Home Assistant/2026.11 (io.robbie.HomeAssistant; iOS 19.1)", connected_at: iso(-5.2 * H), country: "NL", current: false, protected: true, allowlisted: false },
+        { id: "s3", ip: "31.201.88.4", user: "Sam", client_id: "https://ha.example.net/", client_name: null, user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15", connected_at: iso(-0.02 * H), country: "NL", current: false, protected: false, allowlisted: false },
+        { id: "s4", ip: "192.168.1.40", user: "Kitchen tablet", client_id: "https://home-assistant.io/android", client_name: null, user_agent: "Home Assistant/2026.11 (Android 15)", connected_at: iso(-52 * H), country: null, current: false, protected: false, allowlisted: true },
+      ];
       const replies = {
         overview: () => overview, bans: () => ({ bans }), allowlist: () => ({ allowlist }),
         activity: () => ({ entries: activity }), settings: () => settings,
-        history: (m) => history(m.ip), export: () => ({ format: "ban_guard", version: 1, bans, allowlist, settings: {} }),
+        history: (m) => history(m.ip), sessions: () => ({ available: true, sessions }), export: () => ({ format: "ban_guard", version: 1, bans, allowlist, settings: {} }),
       };
       const hass = {
         language: "en",

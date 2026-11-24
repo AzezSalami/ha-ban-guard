@@ -15,6 +15,7 @@ import "./views/allowlist";
 import "./views/backup";
 import "./views/bans";
 import "./views/overview";
+import "./views/sessions";
 import "./views/settings";
 
 const TABS = [
@@ -22,6 +23,7 @@ const TABS = [
   { id: "bans", icon: "mdi:shield-lock-outline" },
   { id: "allowlist", icon: "mdi:playlist-check" },
   { id: "activity", icon: "mdi:timeline-clock-outline" },
+  { id: "sessions", icon: "mdi:devices" },
   { id: "settings", icon: "mdi:cog-outline" },
   { id: "backup", icon: "mdi:swap-vertical" },
 ] as const;
@@ -176,6 +178,8 @@ export class BanGuardPanel extends LitElement {
         ></bg-allowlist>`;
       case "activity":
         return html`<bg-activity .ctx=${ctx}></bg-activity>`;
+      case "sessions":
+        return html`<bg-sessions .ctx=${ctx} .revision=${this.revision}></bg-sessions>`;
       case "settings":
         return html`<bg-settings .ctx=${ctx} .settings=${this.settings}></bg-settings>`;
       case "backup":

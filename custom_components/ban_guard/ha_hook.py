@@ -77,8 +77,8 @@ class Hooks(Protocol):
     def hook_login_success(self, addr: IPAddress, user_name: str | None) -> None:
         """Report a successful login through the auth login flow."""
 
-    def hook_session_opened(self, request: Any) -> None:
-        """Report an authenticated websocket session (its request)."""
+    def hook_session_opened(self, request: Any, info: dict[str, str | None]) -> None:
+        """Report an authenticated websocket session (its request, user and client)."""
 
     def hook_error(self, err: BaseException) -> None:
         """Report an unexpected exception inside a hook."""
@@ -211,6 +211,26 @@ def _wrap(
     return process_success_login
 
 
+def _caller_session_info(frame: Any) -> dict[str, str | None]:
+    """Best-effort: the websocket auth phase keeps the validated `refresh_token` local."""
+    caller = frame.f_back if frame is not None else None
+    try:
+        token = caller.f_locals.get("refresh_token") if caller is not None else None
+        user = getattr(token, "user", None)
+
+        def text(value: Any) -> str | None:
+            return value if isinstance(value, str) and value else None
+
+        return {
+            "user": text(getattr(user, "name", None)),
+            "user_id": text(getattr(user, "id", None)),
+            "client_id": text(getattr(token, "client_id", None)),
+            "client_name": text(getattr(token, "client_name", None)),
+        }
+    finally:
+        del caller
+
+
 def make_success_wrapper(original: Callable[[Any], None], hooks: Hooks) -> Callable[[Any], None]:
     """Wrap the login flow's process_success_login so Ban Guard sees the login."""
 
@@ -225,8 +245,8 @@ def make_success_wrapper(original: Callable[[Any], None], hooks: Hooks) -> Calla
 def make_session_wrapper(original: Callable[[Any], None], hooks: Hooks) -> Callable[[Any], None]:
     """Wrap the websocket auth's process_success_login to track open sessions."""
 
-    def report(request: Any, _frame: Any) -> None:
-        hooks.hook_session_opened(request)
+    def report(request: Any, frame: Any) -> None:
+        hooks.hook_session_opened(request, _caller_session_info(frame))
 
     return _wrap(original, hooks, report)
 

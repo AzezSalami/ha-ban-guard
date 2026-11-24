@@ -245,6 +245,12 @@
     },
     "import_too_large": {
       "message": "The backup has more than {limit} items."
+    },
+    "session_not_found": {
+      "message": "That session has already ended."
+    },
+    "session_current": {
+      "message": "This is the session you are using right now; it cannot be disconnected from here."
     }
   },
   "services": {

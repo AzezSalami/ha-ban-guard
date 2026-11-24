@@ -19,7 +19,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D", "S", "SLF001", "PLC0415", "PLR2004", "BLE001", "RUF012", "PT011", "PT018", "PT022", "ASYNC230", "ASYNC240", "RUF015"]
+"tests/**" = ["D", "S", "SLF001", "PLC0415", "PLR2004", "BLE001", "RUF012", "PT011", "PT018", "PT022", "ASYNC230", "ASYNC240", "RUF015", "ASYNC109", "ASYNC110", "PLR0917"]
 "scripts/**" = ["D", "S", "PLC0415"]
 
 [tool.ruff.lint.isort]

@@ -5,6 +5,7 @@
     "bans": "Bans",
     "allowlist": "Allowlist",
     "activity": "Activity",
+    "sessions": "Active sessions",
     "settings": "Settings",
     "backup": "Import & export"
   },
@@ -234,7 +235,9 @@
     "import_too_large": "The backup has more than {limit} items.",
     "not_loaded": "Ban Guard is not loaded.",
     "unauthorized": "Only administrators can use Ban Guard.",
-    "invalid": "Invalid entry: {detail}"
+    "invalid": "Invalid entry: {detail}",
+    "session_not_found": "That session has already ended.",
+    "session_current": "This is the session you are using right now."
   },
   "enforcement": {
     "not_enforced": "Not enforced",
@@ -252,5 +255,35 @@
       "hook": "Request protection is not active ({status}).",
       "unknown": "Ban Guard cannot apply this ban right now."
     }
+  },
+  "sessions": {
+    "summary": "{count} open session(s) from {users} user(s)",
+    "refresh": "Refresh",
+    "col_user": "User",
+    "col_ip": "Address",
+    "col_client": "App or browser",
+    "col_connected": "Connected",
+    "col_actions": "Actions",
+    "for": "for {time}",
+    "this_session": "This session",
+    "unknown_user": "Unknown user",
+    "disconnect": "Disconnect",
+    "disconnect_label": "Disconnect {user} at {ip}",
+    "confirm_disconnect_title": "Disconnect {user}?",
+    "confirm_disconnect_body": "The {client} at {ip} is disconnected now. It can reconnect straight away unless you also ban the address.",
+    "disconnected": "Disconnected {user} at {ip}.",
+    "ban": "Ban",
+    "ban_label": "Ban {ip}",
+    "confirm_ban_title": "Ban {ip}?",
+    "confirm_ban_body": "Every open session from {ip} is closed now and new requests from it are refused until you unban it.",
+    "ban_reason": "Banned from active sessions",
+    "protected": "Protected",
+    "allowlisted": "Allowlisted",
+    "cannot_ban_help": "This address cannot be banned: it is protected by the lockout guard or on the allowlist.",
+    "empty_title": "No open sessions",
+    "empty_body": "Apps and browsers that are signed in to Home Assistant appear here while they are connected.",
+    "unavailable_title": "Session tracking is not available",
+    "unavailable_body": "This Home Assistant version or configuration does not let Ban Guard see open sessions. Banning still works.",
+    "privacy": "Sessions are kept in memory only, are never stored or sent anywhere, and the list starts empty after a restart."
   }
 }

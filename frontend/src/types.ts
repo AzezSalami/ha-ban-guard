@@ -62,6 +62,7 @@ export interface Status {
   protection_enabled: boolean;
   login_logging: boolean;
   session_closing: boolean;
+  open_sessions: number;
   ha_login_threshold: number | null;
   geoip: { enabled: boolean; loaded: boolean; edition: string; error: string | null };
   rdns: boolean;
@@ -94,6 +95,20 @@ export interface History {
   offenses: number;
   allowlisted: boolean;
   activity: ActivityEntry[];
+}
+
+export interface SessionInfo {
+  id: string;
+  ip: string;
+  user: string | null;
+  client_id: string | null;
+  client_name: string | null;
+  user_agent: string | null;
+  connected_at: string;
+  country: string | null;
+  current: boolean;
+  protected: boolean;
+  allowlisted: boolean;
 }
 
 export interface Settings {
