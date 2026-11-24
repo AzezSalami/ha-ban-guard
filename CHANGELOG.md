@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/AzezSalami/ha-ban-guard/compare/v1.2.1...v1.3.0) (2026-11-24)
+
+
+### Features
+
+* show unenforced bans and close open sessions when an address is banned ([0e783b1](https://github.com/AzezSalami/ha-ban-guard/commit/0e783b1627e137afe92209946e50f23a45515d20))
+
 ## [1.2.1](https://github.com/AzezSalami/ha-ban-guard/compare/v1.2.0...v1.2.1) (2026-11-24)
 
 
