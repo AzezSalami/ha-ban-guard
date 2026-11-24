@@ -44,3 +44,8 @@ updates:
         update-types: [minor, patch]
     commit-message:
       prefix: "ci(deps)"
+    ignore:
+      # v2.6.0's amd64 image is missing from ghcr.io, so the job cannot start.
+      # Only this version is skipped; a fixed v2.6.1 or later is still proposed.
+      - dependency-name: ossf/scorecard-action
+        versions: ["2.6.0"]
