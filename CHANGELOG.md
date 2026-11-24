@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/AzezSalami/ha-ban-guard/compare/v1.2.0...v1.2.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **deps:** pin TypeScript 6.0.3 until typescript-eslint supports 7 ([f90b381](https://github.com/AzezSalami/ha-ban-guard/commit/f90b381bda6f97847cdd5745abde5fffa0660891))
+
 ## [1.2.0](https://github.com/AzezSalami/ha-ban-guard/compare/v1.1.1...v1.2.0) (2026-11-17)
 
 
